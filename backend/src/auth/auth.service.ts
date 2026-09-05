@@ -1,12 +1,11 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Role, User } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+import * as argon2 from 'argon2';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** Matches prisma/seed/seed.js so a platform-minted password verifies unchanged. */
-const BCRYPT_ROUNDS = 10;
 const ACCESS_TTL_SECONDS = 15 * 60;
 const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
 
@@ -15,6 +14,12 @@ const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
  * turns the login form into an account-enumeration oracle.
  */
 const CREDENTIALS_REJECTED = 'That email and password combination was not recognised.';
+
+/** Valid-format Argon2id hash of a value no real password can equal, used to equalise
+ *  verify() timing when the account is unknown so the login endpoint cannot be used
+ *  to enumerate emails. */
+const DUMMY_ARGON2_HASH =
+  '$argon2id$v=19$m=65536,p=4,t=3$fn7NNk865ttb2yIF2Iekpw$gCCjGpPs6uztcG9VV1y3XW3NHi8CumHR5o2g1huzcfY';
 
 export interface SessionUser {
   id: string;
@@ -57,7 +62,7 @@ export class AuthService {
       data: {
         email: normalised,
         name: name?.trim() || null,
-        passwordHash: await bcrypt.hash(password, BCRYPT_ROUNDS),
+        passwordHash: await argon2.hash(password),
         role: isFirstUser ? Role.ADMIN : Role.USER,
       },
     });
@@ -66,10 +71,10 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<TokenPair> {
     const user = await this.prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
-    // Hash a throwaway value when the account is unknown so the response time does
-    // not reveal whether the email exists.
-    const hash = user?.passwordHash ?? '$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidin';
-    const ok = await bcrypt.compare(password, hash);
+    // Verify against a throwaway hash when the account is unknown so the response
+    // time does not reveal whether the email exists.
+    const hash = user?.passwordHash ?? DUMMY_ARGON2_HASH;
+    const ok = await argon2.verify(hash, password).catch(() => false);
     if (!user || !ok) throw new UnauthorizedException(CREDENTIALS_REJECTED);
     return this.issue(user);
   }

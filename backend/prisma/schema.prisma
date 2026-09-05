@@ -11,7 +11,7 @@ model User {
   id           String   @id @default(uuid())
   email        String   @unique
   name         String?
-  /// bcryptjs hash (BCRYPT_ROUNDS in prisma/seed/seed.js and the auth service). Never store plaintext.
+  /// argon2id hash (see prisma/seed/seed.js and the auth service). Never store plaintext.
   passwordHash String
   role         Role     @default(USER)
   createdAt    DateTime @default(now())
@@ -33,7 +33,7 @@ enum Role {
 
 /// Platform-owned logins, materialized by prisma/seed/seed.js from COLOSSUS_ACCOUNTS_JSON.
 /// Native to every Colossus app: the accounts Colossus shows are exactly the rows here,
-/// and each one also exists as a User with the same bcrypt hash so it can log in.
+/// and each one also exists as a User with the same argon2 hash so it can log in.
 model ColossusAccount {
   id           String   @id @default(uuid())
   role         String

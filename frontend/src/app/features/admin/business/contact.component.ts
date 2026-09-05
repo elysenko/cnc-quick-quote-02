@@ -38,13 +38,13 @@ export class ContactComponent {
       .subscribe(() => this.draft.set(this.form.getRawValue()));
   }
 
-  save(): void {
+  async save(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     const value = this.form.getRawValue();
-    this.branding.update({
+    await this.branding.save({
       contactEmail: value.contactEmail.trim(),
       contactPhone: value.contactPhone.trim(),
       addressLine1: value.addressLine1.trim(),

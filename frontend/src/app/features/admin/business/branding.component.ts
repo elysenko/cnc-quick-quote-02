@@ -65,13 +65,13 @@ export class BrandingComponent {
     this.form.controls.accentColor.markAsDirty();
   }
 
-  save(): void {
+  async save(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     const value = this.form.getRawValue();
-    this.branding.update({
+    await this.branding.save({
       companyName: value.companyName.trim(),
       logoUrl: value.logoUrl.trim(),
       primaryColor: value.primaryColor.toLowerCase(),

@@ -8,7 +8,7 @@
  * Input:  COLOSSUS_ACCOUNTS_JSON — injected into the pod env by Colossus at provision:
  *         [{"role":"ADMIN","email":"admin@demo.local","password":"…","login_path":"/login"}, …]
  * Effect: upserts one `colossus_accounts` row AND one `User` per account, hashing the
- *         password with bcryptjs exactly as the auth service verifies it. Idempotent —
+ *         password with argon2 exactly as the auth service verifies it. Idempotent —
  *         re-running re-asserts the hash so the platform-held password always logs in.
  * Output: one summary line, roles only. Never prints emails, passwords or hashes.
  * Failure: exits 1 when the env is missing/malformed or a contract role has no `Role`
@@ -20,10 +20,9 @@
  * writes inline rows without an environment guard (unguarded-seed-fixture).
  */
 const { PrismaClient, Role } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+const argon2 = require('argon2');
 
 const ACCOUNTS_ENV = 'COLOSSUS_ACCOUNTS_JSON';
-const BCRYPT_ROUNDS = 10;
 const DEFAULT_LOGIN_PATH = '/login';
 const REQUIRED_FIELDS = ['role', 'email', 'password'];
 
@@ -67,7 +66,7 @@ function resolveAppRole(contractRole) {
 /** Upsert the colossus_accounts row and the matching User for one platform account. */
 async function upsertAccount(account) {
   const role = resolveAppRole(account.role);
-  const passwordHash = await bcrypt.hash(account.password, BCRYPT_ROUNDS);
+  const passwordHash = await argon2.hash(account.password);
   const loginPath = account.login_path || DEFAULT_LOGIN_PATH;
   await prisma.colossusAccount.upsert({
     where: { email: account.email },

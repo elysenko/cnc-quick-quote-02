@@ -1,4 +1,4 @@
-import { MM_PER_FOOT, PricingConfig, priceQuote } from './pricing';
+import { BreakdownLine, MM_PER_FOOT, PricingConfig, priceQuote } from './pricing';
 
 const cfg = (overrides: Partial<PricingConfig> = {}): PricingConfig => ({
   setupFeeCents: 5000,
@@ -12,7 +12,7 @@ const cfg = (overrides: Partial<PricingConfig> = {}): PricingConfig => ({
   ...overrides,
 });
 
-const lineFor = (result: { breakdown: { label: string }[] }, label: string) =>
+const lineFor = (result: { breakdown: BreakdownLine[] }, label: string) =>
   result.breakdown.find((l) => l.label === label);
 
 describe('MM_PER_FOOT', () => {
