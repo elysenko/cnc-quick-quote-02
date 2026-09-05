@@ -35,7 +35,12 @@ export class RateLimitService {
     const identity = request.user?.id ?? this.clientIp(request);
     const key = `ratelimit:${rule.bucket}:${identity}`;
     const { count, resetSeconds } = await this.redis.incrementWindow(key, rule.windowSeconds);
-    if (count > rule.limit) throw new RateLimitExceededException(resetSeconds);
+    if (count > rule.limit) {
+      // Retry-After is the HTTP-level contract every client understands; the JSON
+      // body repeats the same number for the SPA, which reads it to word the notice.
+      request.res?.setHeader('Retry-After', String(resetSeconds));
+      throw new RateLimitExceededException(resetSeconds);
+    }
   }
 
   private clientIp(request: Request): string {

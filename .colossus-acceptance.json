@@ -1,7 +1,7 @@
 {
   "ready_testid": "app-ready",
   "expect_text": [
-    "Quotes"
+    "instant quotes for laser-cut sheet metal"
   ],
   "reject_signatures": [
     "home-title\">Users<",

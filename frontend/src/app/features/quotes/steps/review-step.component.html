@@ -23,15 +23,21 @@
         }
       </div>
       <div data-testid="nested-preview">
-        <app-workbed-canvas
-          [paths]="drawing()?.paths ?? []"
-          [placements]="nested()?.placements ?? []"
-          [bends]="bends()"
-          [sheetWidthMm]="material().sheetWidthMm"
-          [sheetHeightMm]="material().sheetHeightMm"
-          [sheetIndex]="sheetIndex()"
-          [autoStart]="true"
-        />
+        @if (material(); as m) {
+          <app-workbed-canvas
+            [paths]="drawing()?.paths ?? []"
+            [placements]="nested()?.placements ?? []"
+            [bends]="bends()"
+            [sheetWidthMm]="m.sheetWidthMm"
+            [sheetHeightMm]="m.sheetHeightMm"
+            [sheetIndex]="sheetIndex()"
+            [autoStart]="true"
+          />
+        } @else {
+          <div class="empty">
+            <p class="muted small">Choose a drawing and a material to see the nested sheet.</p>
+          </div>
+        }
       </div>
       <div class="card-body">
         <div class="review-metrics">
@@ -48,7 +54,7 @@
       <div class="card-body">
         <dl class="kv">
           <dt>Drawing</dt><dd class="mono">{{ drawing()?.filename }}</dd>
-          <dt>Material</dt><dd>{{ material().name }}</dd>
+          <dt>Material</dt><dd>{{ material()?.name }}</dd>
           <dt>Quantity</dt><dd>{{ quantity() }}</dd>
           <dt>Cut length (total)</dt><dd>{{ ((drawing()?.cutLengthMm ?? 0) * quantity()).toFixed(0) }} mm</dd>
           <dt>Part size</dt><dd>{{ drawing()?.bboxWMm }} × {{ drawing()?.bboxHMm }} mm</dd>

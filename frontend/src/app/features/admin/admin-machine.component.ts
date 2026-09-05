@@ -7,6 +7,20 @@ import type { MachineSettings } from '../../core/models';
 const BYTES_PER_MB = 1024 * 1024;
 const EXT_PATTERN = /^\.[a-z0-9]{1,6}$/;
 
+/**
+ * Placeholder used only for the milliseconds before GET /admin/machine resolves.
+ * Held at the lowest values the form accepts so a half-loaded form can never be
+ * mistaken for real configured limits; load() overwrites it and resets the form
+ * from the server's response.
+ */
+const NEUTRAL_MACHINE: MachineSettings = {
+  sheetSpacingMm: 0,
+  sheetMarginMm: 0,
+  allowedExtensions: [],
+  maxUploadBytes: BYTES_PER_MB / 2,
+  animationSpeed: 1,
+};
+
 /** Nesting, upload and work-bed animation limits used by the quote engine. */
 @Component({
   selector: 'app-admin-machine',
