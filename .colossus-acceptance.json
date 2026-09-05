@@ -1,7 +1,8 @@
 {
   "ready_testid": "app-ready",
   "expect_text": [
-    "instant quotes for laser-cut sheet metal"
+    "quotes for laser-cut sheet metal",
+    "add your bend lines, choose a material"
   ],
   "reject_signatures": [
     "home-title\">Users<",
