@@ -24,11 +24,12 @@ export class PaymentComponent {
   private readonly fb = inject(FormBuilder);
   private readonly branding = inject(BrandingService);
 
-  // MOCK DATA — replace initializer with [] and load via API
   readonly business = this.branding.settings;
 
   readonly saved = signal(false);
   readonly savedNote = signal('');
+  readonly saveError = signal<string | null>(null);
+  readonly saving = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     publishableKey: [
@@ -45,7 +46,8 @@ export class PaymentComponent {
 
   readonly webhookReady = computed(() => this.business().stripeWebhookLast4.length > 0);
 
-  save(): void {
+  async save(): Promise<void> {
+    this.saveError.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -57,11 +59,21 @@ export class PaymentComponent {
     if (!secret) kept.push('secret key');
     if (!webhook) kept.push('webhook signing secret');
 
-    this.branding.update({
-      stripePublishableKey: value.publishableKey.trim(),
-      ...(secret ? { stripeSecretLast4: secret.slice(-4) } : {}),
-      ...(webhook ? { stripeWebhookLast4: webhook.slice(-4) } : {}),
-    });
+    this.saving.set(true);
+    try {
+      await this.branding.save({
+        stripePublishableKey: value.publishableKey.trim(),
+        // Blank means "keep the stored secret" — the server only rotates when a
+        // non-empty value is sent.
+        ...(secret ? { stripeSecretKey: secret } : {}),
+        ...(webhook ? { stripeWebhookSecret: webhook } : {}),
+      });
+    } catch (error) {
+      this.saveError.set((error as Error).message);
+      return;
+    } finally {
+      this.saving.set(false);
+    }
 
     this.form.controls.secretKey.reset('');
     this.form.controls.webhookSecret.reset('');

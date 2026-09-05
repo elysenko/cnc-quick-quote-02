@@ -66,12 +66,16 @@
                       [placeholder]="item.configured ? 'Enter a new value to rotate' : 'Paste connection secret'"
                       [class.invalid]="control(item.key).touched && control(item.key).invalid"
                       [attr.data-testid]="'integration-input-' + item.key" />
-                    <button type="submit" class="btn btn-ghost" [attr.data-testid]="'integration-save-' + item.key">Save</button>
+                    <button type="submit" class="btn btn-ghost" [disabled]="isSaving(item.key)" [attr.data-testid]="'integration-save-' + item.key">
+                      {{ isSaving(item.key) ? 'Saving…' : 'Save' }}
+                    </button>
                   </div>
                   @if (control(item.key).touched && control(item.key).invalid) {
                     <p class="field-error" [attr.data-testid]="'integration-field-error-' + item.key">
                       Enter at least 8 characters.
                     </p>
+                  } @else if (rowError(item.key)) {
+                    <p class="field-error" [attr.data-testid]="'integration-field-error-' + item.key">{{ rowError(item.key) }}</p>
                   } @else if (savedKey() === item.key) {
                     <p class="saved-note" role="status" [attr.data-testid]="'integration-saved-' + item.key">
                       Saved — stored masked.
@@ -125,18 +129,22 @@
                       [placeholder]="item.configured ? 'Enter a new key to rotate' : 'Paste API key'"
                       [class.invalid]="control(item.key).touched && control(item.key).invalid"
                       [attr.data-testid]="'integration-input-' + item.key" />
-                    <button type="submit" class="btn btn-primary" [attr.data-testid]="'integration-save-' + item.key">Save</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="isSaving(item.key)" [attr.data-testid]="'integration-save-' + item.key">
+                      {{ isSaving(item.key) ? 'Saving…' : 'Save' }}
+                    </button>
                   </div>
                   @if (control(item.key).touched && control(item.key).invalid) {
                     <p class="field-error" [attr.data-testid]="'integration-field-error-' + item.key">
                       Enter at least 8 characters.
                     </p>
+                  } @else if (rowError(item.key)) {
+                    <p class="field-error" [attr.data-testid]="'integration-field-error-' + item.key">{{ rowError(item.key) }}</p>
                   } @else if (savedKey() === item.key) {
                     <p class="saved-note" role="status" [attr.data-testid]="'integration-saved-' + item.key">
                       Saved — stored masked.
                     </p>
                   } @else if (item.configured) {
-                    <button type="button" class="btn btn-quiet btn-sm clear" (click)="clearCredential(item)"
+                    <button type="button" class="btn btn-quiet btn-sm clear" [disabled]="isSaving(item.key)" (click)="clearCredential(item)"
                       [attr.data-testid]="'integration-clear-' + item.key">
                       Remove key
                     </button>

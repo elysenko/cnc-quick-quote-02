@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MOCK_INTEGRATIONS } from '../../core/mock/fixtures';
+import { SettingsApi } from '../../core/api/domain.service';
 import type { IntegrationSetting } from '../../core/models';
 
 /**
@@ -16,19 +16,37 @@ import type { IntegrationSetting } from '../../core/models';
 })
 export class AdminSettingsComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly settingsApi = inject(SettingsApi);
 
-  // MOCK DATA — replace initializer with [] and load via API
-  readonly integrations = signal<IntegrationSetting[]>(MOCK_INTEGRATIONS);
+  readonly integrations = signal<IntegrationSetting[]>([]);
 
-  readonly loading = signal(false);
+  readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly savedKey = signal<string | null>(null);
+  readonly rowErrors = signal<Record<string, string>>({});
+  readonly savingKeys = signal<Set<string>>(new Set());
 
   private readonly controls = new Map<string, FormControl<string>>();
 
   readonly services = computed(() => this.integrations().filter((i) => i.kind === 'service'));
   readonly thirdParty = computed(() => this.integrations().filter((i) => i.kind === 'integration'));
   readonly unconfigured = computed(() => this.integrations().filter((i) => !i.configured));
+
+  constructor() {
+    void this.load();
+  }
+
+  private async load(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(null);
+    try {
+      this.integrations.set(await this.settingsApi.integrations());
+    } catch (error) {
+      this.loadError.set((error as Error).message);
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   /** Stable per-row credential control, created lazily on first render. */
   control(key: string): FormControl<string> {
@@ -40,7 +58,33 @@ export class AdminSettingsComponent {
     return existing;
   }
 
-  saveCredential(item: IntegrationSetting): void {
+  isSaving(key: string): boolean {
+    return this.savingKeys().has(key);
+  }
+
+  rowError(key: string): string | null {
+    return this.rowErrors()[key] ?? null;
+  }
+
+  private setRowError(key: string, message: string | null): void {
+    this.rowErrors.update((errors) => {
+      const next = { ...errors };
+      if (message) next[key] = message;
+      else delete next[key];
+      return next;
+    });
+  }
+
+  private setSaving(key: string, saving: boolean): void {
+    this.savingKeys.update((keys) => {
+      const next = new Set(keys);
+      if (saving) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }
+
+  async saveCredential(item: IntegrationSetting): Promise<void> {
     const control = this.control(item.key);
     const value = control.value.trim();
     if (control.invalid || value.length < 8) {
@@ -48,23 +92,36 @@ export class AdminSettingsComponent {
       control.updateValueAndValidity();
       return;
     }
-    const masked = `••••${value.slice(-4)}`;
-    this.integrations.update((list) =>
-      list.map((i) => (i.key === item.key ? { ...i, configured: true, maskedValue: masked } : i)),
-    );
-    control.reset('');
-    control.markAsUntouched();
-    this.savedKey.set(item.key);
-    setTimeout(() => {
-      if (this.savedKey() === item.key) this.savedKey.set(null);
-    }, 2600);
+    this.setRowError(item.key, null);
+    this.setSaving(item.key, true);
+    try {
+      const updated = await this.settingsApi.saveCredential(item.key, value);
+      this.integrations.update((list) => list.map((i) => (i.key === item.key ? updated : i)));
+      control.reset('');
+      control.markAsUntouched();
+      this.savedKey.set(item.key);
+      setTimeout(() => {
+        if (this.savedKey() === item.key) this.savedKey.set(null);
+      }, 2600);
+    } catch (error) {
+      this.setRowError(item.key, (error as Error).message);
+    } finally {
+      this.setSaving(item.key, false);
+    }
   }
 
-  clearCredential(item: IntegrationSetting): void {
-    this.integrations.update((list) =>
-      list.map((i) => (i.key === item.key ? { ...i, configured: false, maskedValue: '' } : i)),
-    );
-    this.control(item.key).reset('');
-    this.savedKey.set(null);
+  async clearCredential(item: IntegrationSetting): Promise<void> {
+    this.setRowError(item.key, null);
+    this.setSaving(item.key, true);
+    try {
+      const updated = await this.settingsApi.clearCredential(item.key);
+      this.integrations.update((list) => list.map((i) => (i.key === item.key ? updated : i)));
+      this.control(item.key).reset('');
+      if (this.savedKey() === item.key) this.savedKey.set(null);
+    } catch (error) {
+      this.setRowError(item.key, (error as Error).message);
+    } finally {
+      this.setSaving(item.key, false);
+    }
   }
 }

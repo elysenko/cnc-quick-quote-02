@@ -9,12 +9,18 @@
     </div>
     <div class="row">
       <button type="button" class="btn btn-ghost" (click)="revert()" data-testid="payment-revert-button">Revert</button>
-      <button type="submit" form="payment-form" class="btn btn-primary" data-testid="payment-save-button">Save keys</button>
+      <button type="submit" form="payment-form" class="btn btn-primary" [disabled]="saving()" data-testid="payment-save-button">
+        {{ saving() ? 'Saving…' : 'Save keys' }}
+      </button>
     </div>
   </div>
 
   @if (saved()) {
     <div class="alert alert-ok" role="status" data-testid="payment-saved-banner">{{ savedNote() }}</div>
+  }
+
+  @if (saveError()) {
+    <div class="alert alert-error" role="alert" data-testid="payment-save-error">{{ saveError() }}</div>
   }
 
   @if (!checkoutReady()) {
@@ -85,8 +91,8 @@
         </div>
       </form>
       <div class="card-foot">
-        <button type="submit" form="payment-form" class="btn btn-primary" data-testid="payment-save-button-foot">
-          Save keys
+        <button type="submit" form="payment-form" class="btn btn-primary" [disabled]="saving()" data-testid="payment-save-button-foot">
+          {{ saving() ? 'Saving…' : 'Save keys' }}
         </button>
       </div>
     </div>
