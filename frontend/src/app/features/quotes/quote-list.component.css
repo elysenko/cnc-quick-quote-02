@@ -1,0 +1,14 @@
+.filters { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-4); }
+.sort { display: flex; align-items: center; gap: var(--s-2); }
+.sort select { min-width: 170px; }
+.right { text-align: right; }
+.mobile-only { display: none; }
+.quote-cards { display: flex; flex-direction: column; }
+.quote-card { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-4); border-bottom: 1px solid var(--border); min-height: 88px; }
+.quote-card:active { background: var(--surface-3); }
+@media (max-width: 768px) {
+  .desktop-only { display: none; }
+  .mobile-only { display: block; }
+  .sort { width: 100%; }
+  .sort select { flex: 1 1 auto; }
+}

@@ -1,0 +1,14 @@
+<div class="editor-wrap">
+  <canvas
+    #cv
+    data-testid="bend-editor-canvas"
+    [class.drawing]="bendMode()"
+    (pointerdown)="onPointerDown($event)"
+    (pointermove)="onPointerMove($event)"
+    (pointerup)="onPointerUp()"
+    (pointercancel)="onPointerUp()"
+    role="img"
+    aria-label="Bend editor showing the part outline and its bend lines"
+  ></canvas>
+  <p class="hint-bar" data-testid="bend-editor-hint">{{ hint() }}</p>
+</div>

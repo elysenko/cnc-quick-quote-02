@@ -1,0 +1,59 @@
+.shell { display: flex; flex-direction: column; min-height: 100vh; min-height: 100svh; }
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: var(--s-4);
+  height: var(--header-h); padding: 0 var(--s-4);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: var(--s-2); font-weight: 700; color: var(--ink); }
+.logo { display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--r-sm); background: var(--primary); color: var(--surface); }
+.logo-img { border-radius: var(--r-sm); object-fit: contain; }
+.brand-name { font-size: var(--fs-base); letter-spacing: -0.01em; white-space: nowrap; }
+.mainnav { display: flex; align-items: center; gap: var(--s-1); margin-left: var(--s-5); }
+.mainnav a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 var(--s-3); border-radius: var(--r-sm); font-size: var(--fs-sm); font-weight: 600; color: var(--muted); }
+.mainnav a:hover { background: var(--surface-3); color: var(--ink); }
+.mainnav a.active { background: var(--primary-soft); color: var(--primary); }
+.adminnav { display: inline-flex; padding-left: var(--s-2); margin-left: var(--s-2); border-left: 1px solid var(--border); }
+.topbar-actions { margin-left: auto; display: flex; align-items: center; gap: var(--s-3); }
+.avatar {
+  width: 40px; height: 40px; min-height: 40px; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--border-strong); background: var(--surface-3); color: var(--ink-2);
+  font: inherit; font-size: var(--fs-xs); font-weight: 700;
+}
+.menu-wrap { position: relative; }
+.menu {
+  position: absolute; right: 0; top: calc(100% + 8px); width: 232px; padding: var(--s-2);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow-3);
+  display: flex; flex-direction: column;
+}
+.menu-id { display: flex; flex-direction: column; gap: 2px; padding: var(--s-2) var(--s-3) var(--s-3); border-bottom: 1px solid var(--border); margin: 0 0 var(--s-2); }
+.menu-id .badge { align-self: flex-start; margin-top: var(--s-1); }
+.menu a, .menu button {
+  display: flex; align-items: center; min-height: 44px; padding: 0 var(--s-3);
+  border: none; background: none; border-radius: var(--r-sm); cursor: pointer;
+  font: inherit; font-size: var(--fs-sm); color: var(--ink-2); text-align: left; width: 100%;
+}
+.menu a:hover, .menu button:hover { background: var(--surface-3); }
+.menu button { color: var(--danger); font-weight: 600; }
+.shell-main { flex: 1 1 auto; }
+.tabbar { display: none; }
+
+@media (max-width: 768px) {
+  .mainnav, .new-cta { display: none; }
+  .topbar { padding: 0 var(--s-3); }
+  .tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 45;
+    display: flex; justify-content: space-around;
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tabbar a {
+    flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    min-height: var(--tabbar-h); font-size: var(--fs-xs); font-weight: 600; color: var(--muted);
+  }
+  .tabbar a.active { color: var(--primary); }
+  .tabbar a.active .dot { background: var(--primary); transform: scale(1.25); }
+  .tabbar a:active { background: var(--surface-3); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); transition: transform 120ms ease; }
+  .dot.accent { background: var(--accent); }
+}

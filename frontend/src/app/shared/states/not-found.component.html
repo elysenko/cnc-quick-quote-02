@@ -1,0 +1,28 @@
+<div class="page state-page" data-testid="not-found-page">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">404</p>
+      <h1>Page not found</h1>
+      <p class="sub">That address does not match anything in {{ business().companyName }} Quick Quote.</p>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="card-body">
+      <p class="muted">
+        The link may be out of date, or the page may have been moved. Nothing has been lost — your quotes and
+        orders are still available from the links below.
+      </p>
+      <p class="attempted">
+        <span class="muted small block">You asked for</span>
+        <span class="mono path" data-testid="not-found-path">{{ attemptedPath() }}</span>
+      </p>
+    </div>
+    <div class="card-foot actions">
+      <a class="btn btn-primary btn-lg" routerLink="/quotes" data-testid="not-found-quotes-link">Go to my quotes</a>
+      <a class="btn btn-ghost btn-lg" routerLink="/quotes/new/upload" data-testid="not-found-new-quote-link">
+        Start a new quote
+      </a>
+    </div>
+  </section>
+</div>

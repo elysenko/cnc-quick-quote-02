@@ -1,0 +1,38 @@
+<div class="page state-page" data-testid="forbidden-page">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Access denied</p>
+      <h1>403 — Administrator access required</h1>
+      <p class="sub">This page is restricted to administrators of {{ business().companyName }}.</p>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="card-body">
+      <div class="alert alert-warn" role="alert" data-testid="forbidden-message">
+        <span>
+          You are signed in, but this account does not have the administrator role required for this area.
+        </span>
+      </div>
+
+      <dl class="kv facts">
+        <dt>Signed in as</dt>
+        <dd class="plain" data-testid="forbidden-email">{{ user()?.email || 'Unknown account' }}</dd>
+        <dt>Current role</dt>
+        <dd><span class="badge badge-neutral" data-testid="forbidden-role">{{ role() }}</span></dd>
+        <dt>Required role</dt>
+        <dd><span class="badge badge-info">ADMIN</span></dd>
+      </dl>
+
+      <p class="muted">
+        Nothing is wrong with your account — quoting, checkout and order history all work as normal.
+        If you need administrator access, ask an existing administrator to change your role, or contact
+        <a class="link" [href]="'mailto:' + business().contactEmail">{{ business().contactEmail }}</a>.
+      </p>
+    </div>
+    <div class="card-foot actions">
+      <a class="btn btn-primary btn-lg" routerLink="/quotes" data-testid="forbidden-quotes-link">Go to my quotes</a>
+      <a class="btn btn-ghost btn-lg" routerLink="/account" data-testid="forbidden-account-link">Account settings</a>
+    </div>
+  </section>
+</div>

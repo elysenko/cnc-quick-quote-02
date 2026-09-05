@@ -1,0 +1,105 @@
+<div class="split" data-testid="upload-step">
+  <div class="stack">
+    <section class="card">
+      <div class="card-head">
+        <h2>Upload your drawing</h2>
+        <span class="badge badge-neutral">{{ extensions() }} · max {{ maxMb() }} MB</span>
+      </div>
+      <div class="card-body">
+        @if (hint()) {
+          <div class="alert alert-warn" data-testid="upload-hint">{{ hint() }}</div>
+        }
+        @if (error()) {
+          <div class="alert alert-error" data-testid="upload-error">{{ error() }}</div>
+        }
+
+        <label class="dropzone" for="upload-file-input">
+          <span class="dz-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 16V4" /><path d="m7 9 5-5 5 5" /><path d="M4 20h16" />
+            </svg>
+          </span>
+          <span class="dz-title">Choose a DXF file</span>
+          <span class="dz-sub muted small">or drag it here — units are read as millimetres</span>
+          <input id="upload-file-input" type="file" accept=".dxf" (change)="onFile($event)"
+                 data-testid="upload-file-input" />
+        </label>
+
+        @if (uploading()) {
+          <div class="upload-progress" data-testid="upload-progress">
+            <div class="row-between small">
+              <span>Uploading and parsing…</span>
+              <span class="mono">{{ percent() }}%</span>
+            </div>
+            <div class="progress"><span [style.width.%]="percent()"></span></div>
+          </div>
+        }
+
+        <div class="recent">
+          <p class="label">Or re-use a drawing already on your account</p>
+          <ul class="drawing-list" data-testid="drawing-list">
+            @for (drawing of drawings(); track drawing.id) {
+              <li>
+                <button type="button" class="drawing-row" (click)="choose(drawing)"
+                        [class.picked]="drawing.id === params().drawingId"
+                        [attr.data-testid]="'drawing-option-' + drawing.id">
+                  <span class="d-name mono">{{ drawing.filename }}</span>
+                  <span class="muted small">{{ drawing.bboxWMm }} × {{ drawing.bboxHMm }} mm · {{ drawing.entityCount }} entities</span>
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <button type="button" class="btn btn-quiet btn-sm preview-tool" (click)="simulateParseFailure()"
+                data-testid="simulate-parse-failure">
+          Preview: simulate an unparseable drawing
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <div class="stack">
+    @if (selected(); as drawing) {
+      <section class="card" data-testid="geometry-summary">
+        <div class="card-head">
+          <h3>Geometry summary</h3>
+          <span class="badge badge-ok">Parsed</span>
+        </div>
+        <app-workbed-canvas
+          [paths]="drawing.paths"
+          [placements]="[{ sheet: 1, x: 0, y: 0 }]"
+          [sheetWidthMm]="drawing.bboxWMm"
+          [sheetHeightMm]="drawing.bboxHMm"
+          [autoStart]="false"
+          [compact]="true"
+        />
+        <div class="card-body">
+          <dl class="kv">
+            <dt>File</dt><dd class="mono">{{ drawing.filename }}</dd>
+            <dt>Entities</dt><dd data-testid="geometry-entities">{{ drawing.entityCount }}</dd>
+            <dt>Cut length</dt><dd data-testid="geometry-cut-length">{{ drawing.cutLengthMm }} mm</dd>
+            <dt>Bounding box</dt><dd data-testid="geometry-bbox">{{ drawing.bboxWMm }} × {{ drawing.bboxHMm }} mm</dd>
+            <dt>File size</dt><dd>{{ (drawing.sizeBytes / 1024).toFixed(0) }} KB</dd>
+          </dl>
+        </div>
+        <div class="card-foot">
+          <p class="small muted foot-note">
+            Check these against your part. Open or duplicated contours inflate the cut length and
+            therefore the price.
+          </p>
+        </div>
+      </section>
+    } @else {
+      <section class="card">
+        <div class="card-body empty" data-testid="upload-empty">
+          <h3>No drawing yet</h3>
+          <p class="muted small">
+            Once your DXF is parsed you will see the entity count, total cut length and bounding box
+            here before anything is priced.
+          </p>
+        </div>
+      </section>
+    }
+  </div>
+</div>

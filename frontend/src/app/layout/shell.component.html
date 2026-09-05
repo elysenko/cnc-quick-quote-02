@@ -1,0 +1,83 @@
+<div class="shell" data-testid="app-shell">
+  <header class="topbar">
+    <a class="brand" routerLink="/quotes" data-testid="brand-home">
+      @if (business().logoUrl) {
+        <img [src]="business().logoUrl" alt="" width="28" height="28" class="logo-img" />
+      } @else {
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 17 12 3l9 14" /><path d="M7 21h10" />
+          </svg>
+        </span>
+      }
+      <span class="brand-name">{{ business().companyName }}</span>
+    </a>
+
+    <nav class="mainnav" aria-label="Primary">
+      <a routerLink="/quotes" routerLinkActive="active" data-testid="nav-quotes">Quotes</a>
+      <a routerLink="/orders" routerLinkActive="active" data-testid="nav-orders">Orders</a>
+      @if (isAdmin()) {
+        <span class="adminnav" data-testid="admin-nav">
+          <a routerLink="/admin/materials" routerLinkActive="active" data-testid="nav-admin">Admin</a>
+        </span>
+      }
+    </nav>
+
+    <div class="topbar-actions">
+      <a class="btn btn-primary btn-sm new-cta" routerLink="/quotes/new/upload" data-testid="header-new-quote">
+        New quote
+      </a>
+      <div class="menu-wrap">
+        <button
+          type="button"
+          class="avatar"
+          (click)="toggleMenu()"
+          [attr.aria-expanded]="menuOpen()"
+          aria-haspopup="menu"
+          data-testid="user-menu"
+        >
+          {{ initials() }}
+        </button>
+        @if (menuOpen()) {
+          <div class="menu" role="menu" data-testid="user-menu-panel">
+            <p class="menu-id">
+              <strong>{{ user()?.name || 'Signed in' }}</strong>
+              <span class="muted small">{{ user()?.email }}</span>
+              <span class="badge badge-neutral">{{ user()?.role }}</span>
+            </p>
+            <a routerLink="/account" role="menuitem" (click)="closeMenu()" data-testid="menu-account">Account</a>
+            <a routerLink="/orders" role="menuitem" (click)="closeMenu()">Order history</a>
+            @if (isAdmin()) {
+              <a routerLink="/admin/settings" role="menuitem" (click)="closeMenu()">Integration settings</a>
+            }
+            <button type="button" role="menuitem" (click)="logout()" data-testid="logout-button">Sign out</button>
+          </div>
+        }
+      </div>
+    </div>
+  </header>
+
+  <main class="shell-main">
+    <router-outlet />
+  </main>
+
+  <nav class="tabbar" aria-label="Primary mobile">
+    <a routerLink="/quotes" routerLinkActive="active" data-testid="tab-quotes">
+      <span class="dot"></span>Quotes
+    </a>
+    <a routerLink="/quotes/new/upload" routerLinkActive="active" data-testid="tab-new">
+      <span class="dot accent"></span>New
+    </a>
+    <a routerLink="/orders" routerLinkActive="active" data-testid="tab-orders">
+      <span class="dot"></span>Orders
+    </a>
+    @if (isAdmin()) {
+      <a routerLink="/admin/materials" routerLinkActive="active" data-testid="tab-admin">
+        <span class="dot"></span>Admin
+      </a>
+    }
+    <a routerLink="/account" routerLinkActive="active" data-testid="tab-account">
+      <span class="dot"></span>Account
+    </a>
+  </nav>
+</div>

@@ -1,0 +1,32 @@
+.stepper { display: flex; gap: var(--s-2); margin-bottom: var(--s-5); flex-wrap: wrap; }
+.stepper li { flex: 1 1 140px; }
+.stepper a {
+  display: flex; align-items: center; gap: var(--s-2);
+  min-height: 48px; padding: 0 var(--s-3);
+  border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface);
+  font-size: var(--fs-sm); font-weight: 600; color: var(--muted);
+}
+.stepper li.current a { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+.stepper li.done a { color: var(--success); border-color: var(--border-strong); }
+.pip {
+  display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--surface-3); color: var(--ink-2); font-size: var(--fs-xs); font-weight: 700; flex: 0 0 auto;
+}
+.stepper li.current .pip { background: var(--primary); color: var(--surface); }
+.stepper li.done .pip { background: var(--success-soft); color: var(--success); }
+.wizard-foot {
+  position: sticky; bottom: 0; z-index: 20;
+  display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+  margin-top: var(--s-5); padding: var(--s-3) var(--s-4);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow-2);
+}
+.foot-msg { flex: 1 1 auto; text-align: right; }
+@media (max-width: 768px) {
+  /* Clear the fixed wizard footer so it never covers the step content. */
+  :host { display: block; }
+  .page { padding-bottom: calc(var(--tabbar-h) + 120px); }
+  .stepper li { flex: 1 1 calc(50% - var(--s-2)); }
+  .pip-label { font-size: var(--fs-xs); }
+  .wizard-foot { position: fixed; left: var(--s-3); right: var(--s-3); bottom: calc(var(--tabbar-h) + var(--s-2)); }
+  .foot-msg { order: 3; flex: 1 0 100%; text-align: left; }
+}

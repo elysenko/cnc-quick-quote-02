@@ -1,0 +1,125 @@
+<div class="page" data-testid="admin-branding-page">
+  <div class="page-head">
+    <div>
+      <h1>Branding</h1>
+      <p class="sub">
+        Company name, logo and palette — applied live across the app, customer quotes and emails.
+      </p>
+    </div>
+    <div class="row">
+      <button type="button" class="btn btn-ghost" (click)="revert()" data-testid="branding-revert-button">Revert</button>
+      <button type="submit" form="branding-form" class="btn btn-primary" data-testid="branding-save-button">Save branding</button>
+    </div>
+  </div>
+
+  @if (saved()) {
+    <div class="alert alert-ok" role="status" data-testid="branding-saved-banner">
+      Saved — the new branding is applied everywhere.
+    </div>
+  }
+
+  <div class="split">
+    <div class="card">
+      <div class="card-head"><h2>Identity</h2></div>
+      <form id="branding-form" class="card-body" [formGroup]="form" (ngSubmit)="save()" novalidate data-testid="branding-form">
+        <div class="field">
+          <label for="b-name">Company name</label>
+          <input id="b-name" type="text" formControlName="companyName" autocomplete="organization"
+            [class.invalid]="form.controls.companyName.touched && form.controls.companyName.invalid"
+            data-testid="branding-company-name-input" />
+          @if (form.controls.companyName.touched && form.controls.companyName.invalid) {
+            <p class="field-error" data-testid="branding-company-name-error">
+              A company name is required (60 characters max).
+            </p>
+          } @else {
+            <p class="hint">Shown in the header, on quotes and in order confirmation emails.</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="b-logo">Logo URL</label>
+          <input id="b-logo" type="url" formControlName="logoUrl" placeholder="https://cdn.example.com/logo.svg"
+            autocomplete="off" data-testid="branding-logo-url-input" />
+          <p class="hint">Optional. Square SVG or PNG, at least 64 × 64. Leave blank to use the monogram.</p>
+        </div>
+
+        <h3 class="section-title">Palette</h3>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="b-primary-hex">Primary colour</label>
+            <div class="row colour-row">
+              <input type="color" class="swatch" [value]="previewPrimary()" (input)="setPrimary($event)"
+                aria-label="Pick primary colour" data-testid="branding-primary-picker" />
+              <input id="b-primary-hex" type="text" class="mono" formControlName="primaryColor" spellcheck="false"
+                autocomplete="off" placeholder="#1d4ed8"
+                [class.invalid]="form.controls.primaryColor.touched && form.controls.primaryColor.invalid"
+                data-testid="branding-primary-input" />
+            </div>
+            @if (form.controls.primaryColor.touched && form.controls.primaryColor.invalid) {
+              <p class="field-error" data-testid="branding-primary-error">
+                Enter a 6-digit hex colour, e.g. #1d4ed8.
+              </p>
+            } @else {
+              <p class="hint">Buttons, links and active navigation.</p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="b-accent-hex">Accent colour</label>
+            <div class="row colour-row">
+              <input type="color" class="swatch" [value]="previewAccent()" (input)="setAccent($event)"
+                aria-label="Pick accent colour" data-testid="branding-accent-picker" />
+              <input id="b-accent-hex" type="text" class="mono" formControlName="accentColor" spellcheck="false"
+                autocomplete="off" placeholder="#ea580c"
+                [class.invalid]="form.controls.accentColor.touched && form.controls.accentColor.invalid"
+                data-testid="branding-accent-input" />
+            </div>
+            @if (form.controls.accentColor.touched && form.controls.accentColor.invalid) {
+              <p class="field-error" data-testid="branding-accent-error">
+                Enter a 6-digit hex colour, e.g. #ea580c.
+              </p>
+            } @else {
+              <p class="hint">Bend lines, highlights and secondary calls to action.</p>
+            }
+          </div>
+        </div>
+      </form>
+      <div class="card-foot">
+        <button type="submit" form="branding-form" class="btn btn-primary" data-testid="branding-save-button-foot">
+          Save branding
+        </button>
+      </div>
+    </div>
+
+    <aside class="panel" data-testid="branding-preview">
+      <p class="eyebrow">Live preview</p>
+      <div class="preview card">
+        <div class="preview-head">
+          @if (draft().logoUrl) {
+            <img class="preview-logo" [src]="draft().logoUrl" alt="" width="28" height="28" />
+          } @else {
+            <span class="preview-mark" [style.background]="previewPrimary()">{{ initials() || '—' }}</span>
+          }
+          <strong class="preview-name">{{ draft().companyName || 'Your company' }}</strong>
+          <span class="preview-nav">Quotes</span>
+        </div>
+        <div class="preview-body">
+          <p class="small muted">Quote Q-1042 · Mild Steel 1.5mm · 10 off</p>
+          <div class="row">
+            <button type="button" class="btn btn-sm preview-btn" [style.background]="previewPrimary()" data-testid="branding-preview-primary">
+              Checkout
+            </button>
+            <button type="button" class="btn btn-sm preview-btn" [style.background]="previewAccent()" data-testid="branding-preview-accent">
+              Add bend
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="alert alert-info note">
+        Colours are applied as CSS custom properties, so every screen — including quotes already on
+        screen — re-themes the moment you save.
+      </div>
+    </aside>
+  </div>
+</div>

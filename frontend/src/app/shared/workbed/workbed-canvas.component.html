@@ -1,0 +1,11 @@
+<div class="bed-wrap" [class.compact]="compact()">
+  <canvas #cv data-testid="workbed-canvas" role="img"
+          aria-label="Work bed showing the nested sheet, cut paths and bend lines"></canvas>
+  @if (!compact()) {
+    <div class="legend" data-testid="workbed-legend">
+      <span class="key"><i class="swatch cut"></i>Cut path</span>
+      <span class="key"><i class="swatch bend"></i>Bend line</span>
+      <span class="key mono">{{ (progress() * 100).toFixed(0) }}% cut</span>
+    </div>
+  }
+</div>

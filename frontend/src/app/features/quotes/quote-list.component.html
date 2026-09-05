@@ -1,0 +1,98 @@
+<div class="page" data-testid="quote-list-page">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Your workspace</p>
+      <h1>Quotes</h1>
+      <p class="sub">
+        {{ filtered().length }} quote{{ filtered().length === 1 ? '' : 's' }} ·
+        {{ money(totalValue()) }} total value
+      </p>
+    </div>
+    <a class="btn btn-primary" routerLink="/quotes/new/upload" data-testid="new-quote-button">New quote</a>
+  </div>
+
+  <div class="filters">
+    <div class="chip-row" data-testid="quote-status-filter">
+      @for (s of statuses; track s.key) {
+        <button type="button" class="chip" [class.active]="status() === s.key" (click)="setStatus(s.key)"
+                [attr.data-testid]="'quote-filter-' + s.key">{{ s.label }}</button>
+      }
+    </div>
+    <label class="sort">
+      <span class="label">Sort</span>
+      <select [value]="sort()" (change)="setSort($event)" data-testid="quote-sort">
+        <option value="newest">Newest first</option>
+        <option value="total">Highest value</option>
+      </select>
+    </label>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error" data-testid="quote-list-error">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="card card-pad stack" data-testid="quote-list-loading">
+      @for (row of [1, 2, 3]; track row) {
+        <div class="skeleton" [style.width.%]="90 - row * 10"></div>
+      }
+    </div>
+  } @else if (visible().length === 0) {
+    <div class="card">
+      <div class="empty" data-testid="quote-list-empty">
+        <h3>No quotes here yet</h3>
+        <p class="muted small">Upload a DXF drawing and you will have a price in under a minute.</p>
+        <a class="btn btn-primary" routerLink="/quotes/new/upload">Start a quote</a>
+      </div>
+    </div>
+  } @else {
+    <div class="card">
+      <div class="table-wrap desktop-only">
+        <table class="data" data-testid="quote-list">
+          <thead>
+            <tr>
+              <th>Quote</th><th>Drawing</th><th>Material</th><th>Qty</th>
+              <th>Sheets</th><th>Total</th><th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (quote of visible(); track quote.id) {
+              <tr [attr.data-testid]="'quote-row-' + quote.id">
+                <td class="mono">{{ quote.reference }}</td>
+                <td class="mono">{{ quote.drawingName }}</td>
+                <td>{{ quote.materialName }}</td>
+                <td class="mono">{{ quote.quantity }}</td>
+                <td class="mono">{{ quote.sheetCount }}</td>
+                <td class="mono"><strong>{{ money(quote.totalCents) }}</strong></td>
+                <td><span [class]="badgeClass(quote.status)">{{ statusLabel(quote.status) }}</span></td>
+                <td class="right">
+                  <a class="btn btn-ghost btn-sm" [routerLink]="['/quotes', quote.id]"
+                     [attr.data-testid]="'quote-open-' + quote.id">Open</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <ul class="mobile-only quote-cards">
+        @for (quote of visible(); track quote.id) {
+          <li>
+            <a class="quote-card" [routerLink]="['/quotes', quote.id]"
+               [attr.data-testid]="'quote-card-' + quote.id">
+              <div class="row-between">
+                <strong class="mono">{{ quote.reference }}</strong>
+                <span [class]="badgeClass(quote.status)">{{ statusLabel(quote.status) }}</span>
+              </div>
+              <span class="mono small muted">{{ quote.drawingName }}</span>
+              <div class="row-between">
+                <span class="small muted">{{ quote.materialName }} · {{ quote.quantity }} off</span>
+                <strong class="mono">{{ money(quote.totalCents) }}</strong>
+              </div>
+            </a>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</div>

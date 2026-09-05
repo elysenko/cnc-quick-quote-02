@@ -1,0 +1,27 @@
+:host { display: block; }
+.page { padding: 0; max-width: none; }
+.page-head h1 { font-size: var(--fs-lg); }
+
+.stored {
+  margin: 0;
+  align-self: flex-start;
+  padding: 2px var(--s-2);
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.status-list { display: flex; flex-direction: column; gap: var(--s-2); margin-top: var(--s-2); }
+.status-list li {
+  flex-wrap: nowrap;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: var(--fs-sm);
+}
+.note { margin: var(--s-4) 0 0; }

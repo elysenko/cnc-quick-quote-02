@@ -1,0 +1,185 @@
+<div class="page" data-testid="admin-materials-page">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Material catalogue</h1>
+      <p class="sub">
+        Thickness, sheet size and cost multiplier for every stocked sheet — admins see inactive
+        materials too, unlike the customer-facing material selector.
+      </p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="openCreate()" data-testid="material-create-button">
+      New material
+    </button>
+  </div>
+
+  @if (saved()) {
+    <div class="alert alert-ok" data-testid="material-saved-banner" role="status">{{ savedMessage() }}</div>
+  }
+
+  <div class="card">
+    <div class="card-head toolbar">
+      <div class="chip-row" role="group" aria-label="Filter by status">
+        <button type="button" class="chip" [class.active]="status() === 'all'" (click)="setStatus('all')" data-testid="filter-all">
+          All <span class="count">{{ materials().length }}</span>
+        </button>
+        <button type="button" class="chip" [class.active]="status() === 'active'" (click)="setStatus('active')" data-testid="filter-active">
+          Active <span class="count">{{ activeCount() }}</span>
+        </button>
+        <button type="button" class="chip" [class.active]="status() === 'inactive'" (click)="setStatus('inactive')" data-testid="filter-inactive">
+          Inactive <span class="count">{{ inactiveCount() }}</span>
+        </button>
+      </div>
+      <p class="small muted filter-note">Filter is stored in the URL and is shareable.</p>
+    </div>
+
+    @if (loading()) {
+      <div class="card-body stack" data-testid="material-loading">
+        @for (row of skeletonRows; track row) {
+          <span class="skeleton"></span>
+        }
+      </div>
+    } @else if (loadError()) {
+      <div class="card-body" data-testid="material-error">
+        <div class="alert alert-error">{{ loadError() }}</div>
+      </div>
+    } @else if (visible().length === 0) {
+      <div class="empty" data-testid="material-empty">
+        <h3>No materials in this view</h3>
+        <p class="muted">
+          Nothing matches the <strong>{{ status() }}</strong> filter. Clear the filter or add a sheet
+          to the catalogue.
+        </p>
+        <button type="button" class="btn btn-ghost" (click)="setStatus('all')" data-testid="material-empty-reset">
+          Show all materials
+        </button>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="data" data-testid="material-list">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Thickness</th>
+              <th scope="col">Sheet size</th>
+              <th scope="col">Cost multiplier</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of visible(); track m.id) {
+              <tr [attr.data-testid]="'material-row-' + m.id">
+                <td>
+                  <strong>{{ m.name }}</strong>
+                  <span class="muted mono small id-tag">{{ m.id }}</span>
+                </td>
+                <td class="mono">{{ m.thicknessMm }} mm</td>
+                <td class="mono">{{ m.sheetWidthMm }} × {{ m.sheetHeightMm }} mm</td>
+                <td class="mono">×{{ m.costMultiplier.toFixed(2) }}</td>
+                <td>
+                  <span class="badge" [class.badge-ok]="m.isActive" [class.badge-neutral]="!m.isActive">
+                    {{ m.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="row actions">
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="openEdit(m)" [attr.data-testid]="'material-edit-' + m.id">
+                      Edit
+                    </button>
+                    <button type="button" class="btn btn-quiet btn-sm" (click)="toggleActive(m)" [attr.data-testid]="'material-toggle-' + m.id">
+                      {{ m.isActive ? 'Deactivate' : 'Activate' }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+@if (modal()) {
+  <div class="modal-scrim" (click)="closeModal()" data-testid="material-modal-scrim">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="material-modal-title" data-testid="material-edit-modal">
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <div class="card-head">
+          <h2 id="material-modal-title">{{ modal() === 'edit' ? 'Edit material' : 'New material' }}</h2>
+          @if (modal() === 'edit' && editing()) {
+            <span class="badge badge-neutral mono">{{ editing()?.id }}</span>
+          }
+        </div>
+
+        <div class="card-body">
+          @if (modal() === 'edit' && !editing()) {
+            <div class="alert alert-error" data-testid="material-missing">
+              Material <strong>{{ editingId() }}</strong> was not found. It may have been removed.
+            </div>
+          }
+          @if (serverError()) {
+            <div class="alert alert-error" data-testid="material-server-error">{{ serverError() }}</div>
+          }
+
+          <div class="field">
+            <label for="mat-name">Material name</label>
+            <input id="mat-name" type="text" formControlName="name" autocomplete="off"
+              placeholder="e.g. Mild Steel 1.5mm"
+              [class.invalid]="form.controls.name.touched && form.controls.name.invalid"
+              data-testid="material-name-input" />
+            @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+              <p class="field-error" data-testid="material-name-error">A material name is required.</p>
+            }
+            @if (form.controls.name.hasError('maxlength')) {
+              <p class="field-error">Keep the name under 60 characters.</p>
+            }
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="mat-thickness">Thickness (mm)</label>
+              <input id="mat-thickness" type="number" step="0.1" min="0.1" formControlName="thicknessMm" data-testid="material-thickness-input" />
+              @if (form.controls.thicknessMm.touched && form.controls.thicknessMm.invalid) {
+                <p class="field-error">Thickness must be at least 0.1 mm.</p>
+              }
+            </div>
+            <div class="field">
+              <label for="mat-multiplier">Cost multiplier</label>
+              <input id="mat-multiplier" type="number" step="0.1" formControlName="costMultiplier"
+                [class.invalid]="form.controls.costMultiplier.touched && form.controls.costMultiplier.invalid"
+                data-testid="material-multiplier-input" />
+              @if (form.controls.costMultiplier.hasError('min')) {
+                <p class="field-error" data-testid="material-multiplier-error">
+                  Cost multiplier cannot be negative.
+                </p>
+              } @else {
+                <p class="hint">Multiplies the per-sheet material cost from pricing settings.</p>
+              }
+            </div>
+            <div class="field">
+              <label for="mat-width">Sheet width (mm)</label>
+              <input id="mat-width" type="number" step="1" formControlName="sheetWidthMm" data-testid="material-width-input" />
+            </div>
+            <div class="field">
+              <label for="mat-height">Sheet height (mm)</label>
+              <input id="mat-height" type="number" step="1" formControlName="sheetHeightMm" data-testid="material-height-input" />
+            </div>
+          </div>
+
+          <label class="check">
+            <input type="checkbox" formControlName="isActive" data-testid="material-active-input" />
+            <span>Active — customers can select this material when quoting</span>
+          </label>
+        </div>
+
+        <div class="card-foot">
+          <button type="button" class="btn btn-ghost" (click)="closeModal()" data-testid="material-cancel-button">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-testid="material-save-button">
+            {{ modal() === 'edit' ? 'Save changes' : 'Create material' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

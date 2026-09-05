@@ -2,10 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>App</title>
-    <base href="/" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <title>CNC Quick Quote — instant sheet-metal quoting</title>
+    <base href="/" id="app-base" />
+    <script>
+      // Resolve the base href at runtime so the SPA works both at the site root and
+      // when served from a path prefix (preview builds live at /<mockup-id>/).
+      // Must run before the bundler-injected <script>/<link> tags are parsed.
+      (function () {
+        var known = ['', 'login', 'signup', 'quotes', 'checkout', 'orders', 'account', 'admin', '403'];
+        var seg = (location.pathname.split('/')[1] || '').toLowerCase();
+        var looksLikeDeployId = seg.length >= 8 && /[-_0-9]/.test(seg);
+        if (known.indexOf(seg) === -1 && looksLikeDeployId) {
+          document.getElementById('app-base').setAttribute('href', '/' + seg + '/');
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="description" content="Upload a DXF, pick a material, get an instant laser-cutting and bending quote." />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   </head>
   <body>
     <app-root></app-root>

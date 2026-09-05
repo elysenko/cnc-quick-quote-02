@@ -1,0 +1,81 @@
+/**
+ * CNC Quick Quote — design tokens.
+ * Single source of truth for colour, type, spacing, radius and elevation.
+ * Component CSS MUST reference these via var(--token); never raw hex.
+ * Branding admin overrides --primary / --accent at runtime (branding.service).
+ */
+:root {
+  /* Brand */
+  --primary: #1d4ed8;
+  --primary-strong: #1e40af;
+  --primary-soft: #eff4ff;
+  --primary-border: #c3d4fe;
+  --accent: #ea580c;
+  --accent-soft: #fff2e8;
+  --accent-border: #fed3b3;
+
+  /* Machine surfaces */
+  --bed: #0f172a;
+  --bed-grid: #1e293b;
+  --sheet: #cbd5e1;
+  --cut: #2563eb;
+  --bend: #f97316;
+  --laser: #f43f5e;
+
+  /* Neutrals */
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #eef2f7;
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #64748b;
+  --faint: #94a3b8;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /* Status */
+  --success: #047857;
+  --success-soft: #ecfdf5;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+  --info: #0369a1;
+  --info-soft: #f0f9ff;
+
+  /* Type */
+  --font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, monospace;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-base: 0.9375rem;
+  --fs-md: 1.0625rem;
+  --fs-lg: 1.375rem;
+  --fs-xl: 1.75rem;
+  --fs-2xl: 2.25rem;
+
+  /* Space */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-7: 3rem;
+
+  /* Shape + elevation */
+  --r-sm: 6px;
+  --r: 10px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+  --scrim: rgba(15, 23, 42, 0.55);
+  --shadow-1: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-2: 0 2px 8px rgba(15, 23, 42, 0.08);
+  --shadow-3: 0 12px 32px rgba(15, 23, 42, 0.16);
+
+  /* Layout */
+  --header-h: 60px;
+  --tabbar-h: 62px;
+  --content-max: 1180px;
+}

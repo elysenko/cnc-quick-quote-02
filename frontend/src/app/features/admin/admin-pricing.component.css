@@ -1,0 +1,31 @@
+.money-input { position: relative; display: block; }
+.money-input .prefix {
+  position: absolute;
+  left: var(--s-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-weight: 600;
+  pointer-events: none;
+}
+.money-input input { padding-left: var(--s-5); font-family: var(--mono); }
+
+.section-title {
+  margin-top: var(--s-3);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--border);
+  color: var(--ink-2);
+}
+
+.panel .lines { margin-top: var(--s-3); }
+.panel .line > span:first-child { display: flex; flex-direction: column; }
+.panel .detail { font-weight: 400; }
+.panel .per-part {
+  margin: var(--s-4) 0 0;
+  padding: var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+}
+.panel .per-part dt { color: var(--ink-2); font-weight: 600; }
+.panel .note { margin: var(--s-4) 0 0; }

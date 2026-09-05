@@ -1,0 +1,105 @@
+<div class="bend-layout" data-testid="bends-step">
+  <section class="card">
+    <div class="card-head">
+      <h2>Bend lines</h2>
+      <button type="button" class="btn btn-sm" [class.btn-primary]="bendMode()" [class.btn-ghost]="!bendMode()"
+              (click)="toggleBendMode()" data-testid="bend-mode-toggle">
+        {{ bendMode() ? 'Bend mode: on' : 'Bend mode: off' }}
+      </button>
+    </div>
+    <app-bend-editor-canvas
+      [paths]="drawing()?.paths ?? []"
+      [bends]="bends()"
+      [selectedId]="selectedId()"
+      [bendMode]="bendMode()"
+      (bendDrawn)="onDrawn($event)"
+      (bendSelected)="onSelected($event)"
+      (bendMoved)="onMoved($event)"
+    />
+    <div class="card-body">
+      <p class="muted small">
+        Your original DXF is never modified — bend lines are stored separately and shown to the
+        press-brake operator alongside the cut file.
+      </p>
+    </div>
+  </section>
+
+  <div class="stack">
+    <section class="card">
+      <div class="card-head">
+        <h3>{{ selected() ? 'Edit bend' : pendingDraft() ? 'New bend' : 'Bend settings' }}</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field">
+            <label for="bend-angle-input">Angle (degrees)</label>
+            <input id="bend-angle-input" type="number" min="0" max="180" [value]="angle()"
+                   (input)="onAngle($event)" [class.invalid]="!!angleError()" data-testid="bend-angle-input" />
+            @if (angleError()) {
+              <span class="field-error" data-testid="bend-angle-error">{{ angleError() }}</span>
+            } @else {
+              <span class="hint">0°–180°.</span>
+            }
+          </div>
+          <div class="field">
+            <label for="bend-direction-select">Direction</label>
+            <select id="bend-direction-select" [value]="direction()" (change)="onDirection($event)"
+                    data-testid="bend-direction-select">
+              <option value="up">Up</option>
+              <option value="down">Down</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <button type="button" class="btn btn-primary" [disabled]="!canSave() || !!angleError()"
+                  (click)="save()" data-testid="bend-save-button">
+            {{ selected() ? 'Update bend' : 'Save bend' }}
+          </button>
+          @if (selected()) {
+            <button type="button" class="btn btn-ghost btn-sm" (click)="rotate(15)" data-testid="bend-rotate-button">
+              Rotate 15°
+            </button>
+          }
+        </div>
+        @if (!canSave()) {
+          <p class="hint">Drag across the part in the canvas to place a bend line, or select an existing one.</p>
+        }
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h3>Bends on this part</h3>
+        <span class="badge badge-neutral">{{ bends().length }}</span>
+      </div>
+      <div class="card-body">
+        @if (bends().length === 0) {
+          <div class="empty" data-testid="bend-list-empty">
+            <h3>No bends yet</h3>
+            <p class="muted small">Flat parts are quoted without any bend charge.</p>
+          </div>
+        } @else {
+          <ul class="stack" data-testid="bend-list">
+            @for (bend of bends(); track bend.id) {
+              <li class="bend-item" [class.selected]="bend.id === selectedId()"
+                  [attr.data-testid]="'bend-item-' + bend.id">
+                <span class="b-main">
+                  <strong class="mono">{{ bend.angleDeg }}° {{ bend.direction }}</strong>
+                  <span class="muted small">
+                    ({{ bend.startX.toFixed(0) }}, {{ bend.startY.toFixed(0) }}) →
+                    ({{ bend.endX.toFixed(0) }}, {{ bend.endY.toFixed(0) }})
+                  </span>
+                </span>
+                <button type="button" class="btn btn-quiet btn-sm" (click)="onSelected(bend.id)"
+                        [attr.data-testid]="'bend-select-' + bend.id">Select</button>
+                <button type="button" class="btn btn-danger btn-sm" (click)="remove(bend.id)"
+                        data-testid="bend-delete-button">Delete</button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </section>
+  </div>
+</div>

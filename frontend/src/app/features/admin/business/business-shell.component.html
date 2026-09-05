@@ -1,0 +1,20 @@
+<div class="page" data-testid="business-shell">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Business settings</h1>
+      <p class="sub">
+        Branding, contact details, payment credentials and shipping methods shown to customers.
+      </p>
+    </div>
+  </div>
+
+  <nav class="tabs" aria-label="Business settings">
+    <a routerLink="/admin/business/branding" [routerLinkActive]="'active'" data-testid="business-tab-branding">Branding</a>
+    <a routerLink="/admin/business/contact" [routerLinkActive]="'active'" data-testid="business-tab-contact">Contact</a>
+    <a routerLink="/admin/business/payment" [routerLinkActive]="'active'" data-testid="business-tab-payment">Payment</a>
+    <a routerLink="/admin/business/shipping" [routerLinkActive]="'active'" data-testid="business-tab-shipping">Shipping</a>
+  </nav>
+
+  <router-outlet />
+</div>

@@ -1,23 +1,769 @@
 {
   "_generated": true,
   "_scaffolded_at": "2026-09-05T21:50:56Z",
-  "fileBudget": { "maxLines": 400, "hardLimit": 500 },
+  "_updated_by": "ui_agent",
+  "fileBudget": {
+    "maxLines": 400,
+    "hardLimit": 500
+  },
   "routes": [
-    { "method": "GET", "path": "/health" },
-    { "method": "GET", "path": "/trpc/users.findAll" },
-    { "method": "GET", "path": "/trpc/users.findById" }
+    {
+      "method": "GET",
+      "path": "/health"
+    },
+    {
+      "method": "GET",
+      "path": "/trpc/users.findAll"
+    },
+    {
+      "method": "GET",
+      "path": "/trpc/users.findById"
+    }
+  ],
+  "frontendRoutes": [
+    {
+      "path": "/login",
+      "flow": "auth",
+      "component": "app-login",
+      "guards": []
+    },
+    {
+      "path": "/signup",
+      "flow": "auth",
+      "component": "app-signup",
+      "guards": []
+    },
+    {
+      "path": "/403",
+      "flow": "error",
+      "component": "app-forbidden",
+      "guards": []
+    },
+    {
+      "path": "/quotes",
+      "flow": "quotes",
+      "component": "app-quote-list",
+      "guards": [
+        "authGuard"
+      ],
+      "queryParams": [
+        "status",
+        "sort",
+        "page"
+      ]
+    },
+    {
+      "path": "/quotes/new",
+      "flow": "quote-wizard",
+      "component": "app-quote-new",
+      "guards": [
+        "authGuard"
+      ],
+      "queryParams": [
+        "drawingId",
+        "materialId",
+        "qty",
+        "bends"
+      ]
+    },
+    {
+      "path": "/quotes/new/upload",
+      "flow": "quote-wizard",
+      "component": "app-upload-step",
+      "guards": [
+        "authGuard"
+      ]
+    },
+    {
+      "path": "/quotes/new/material",
+      "flow": "quote-wizard",
+      "component": "app-material-step",
+      "guards": [
+        "authGuard"
+      ]
+    },
+    {
+      "path": "/quotes/new/bends",
+      "flow": "quote-wizard",
+      "component": "app-bends-step",
+      "guards": [
+        "authGuard"
+      ]
+    },
+    {
+      "path": "/quotes/new/review",
+      "flow": "quote-wizard",
+      "component": "app-review-step",
+      "guards": [
+        "authGuard"
+      ]
+    },
+    {
+      "path": "/quotes/:id",
+      "flow": "quote-detail",
+      "component": "app-quote-detail",
+      "guards": [
+        "authGuard"
+      ],
+      "queryParams": [
+        "panel",
+        "modal"
+      ]
+    },
+    {
+      "path": "/checkout/:quoteId/review",
+      "flow": "checkout",
+      "component": "app-checkout-review",
+      "guards": [
+        "authGuard"
+      ]
+    },
+    {
+      "path": "/checkout/:quoteId/shipping",
+      "flow": "checkout",
+      "component": "app-checkout-shipping",
+      "guards": [
+        "authGuard"
+      ]
+    },
+    {
+      "path": "/checkout/:quoteId/return",
+      "flow": "checkout",
+      "component": "app-payment-return",
+      "guards": [
+        "authGuard"
+      ],
+      "queryParams": [
+        "session_id"
+      ]
+    },
+    {
+      "path": "/orders",
+      "flow": "orders",
+      "component": "app-order-list",
+      "guards": [
+        "authGuard"
+      ],
+      "queryParams": [
+        "status"
+      ]
+    },
+    {
+      "path": "/orders/:id/confirmation",
+      "flow": "orders",
+      "component": "app-order-confirmation",
+      "guards": [
+        "authGuard"
+      ]
+    },
+    {
+      "path": "/account",
+      "flow": "account",
+      "component": "app-account",
+      "guards": [
+        "authGuard"
+      ]
+    },
+    {
+      "path": "/admin/materials",
+      "flow": "admin",
+      "component": "app-admin-materials",
+      "guards": [
+        "authGuard",
+        "adminGuard"
+      ],
+      "queryParams": [
+        "status",
+        "modal",
+        "id"
+      ]
+    },
+    {
+      "path": "/admin/pricing",
+      "flow": "admin",
+      "component": "app-admin-pricing",
+      "guards": [
+        "authGuard",
+        "adminGuard"
+      ]
+    },
+    {
+      "path": "/admin/machine",
+      "flow": "admin",
+      "component": "app-admin-machine",
+      "guards": [
+        "authGuard",
+        "adminGuard"
+      ]
+    },
+    {
+      "path": "/admin/settings",
+      "flow": "admin",
+      "component": "app-admin-settings",
+      "guards": [
+        "authGuard",
+        "adminGuard"
+      ]
+    },
+    {
+      "path": "/admin/business/branding",
+      "flow": "admin-business",
+      "component": "app-admin-branding",
+      "guards": [
+        "authGuard",
+        "adminGuard"
+      ]
+    },
+    {
+      "path": "/admin/business/contact",
+      "flow": "admin-business",
+      "component": "app-admin-contact",
+      "guards": [
+        "authGuard",
+        "adminGuard"
+      ]
+    },
+    {
+      "path": "/admin/business/payment",
+      "flow": "admin-business",
+      "component": "app-admin-payment",
+      "guards": [
+        "authGuard",
+        "adminGuard"
+      ]
+    },
+    {
+      "path": "/admin/business/shipping",
+      "flow": "admin-business",
+      "component": "app-admin-shipping",
+      "guards": [
+        "authGuard",
+        "adminGuard"
+      ]
+    }
   ],
   "components": [
-    { "selector": "app-root", "file": "frontend/src/app/app.component.ts", "maxLines": 400 },
-    { "selector": "app-home", "file": "frontend/src/app/home/home.component.ts", "maxLines": 400 }
+    {
+      "selector": "app-root",
+      "file": "frontend/src/app/app.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-shell",
+      "file": "frontend/src/app/layout/shell.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-login",
+      "file": "frontend/src/app/features/auth/login.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-signup",
+      "file": "frontend/src/app/features/auth/signup.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-quote-list",
+      "file": "frontend/src/app/features/quotes/quote-list.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-quote-new",
+      "file": "frontend/src/app/features/quotes/quote-new.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-upload-step",
+      "file": "frontend/src/app/features/quotes/steps/upload-step.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-material-step",
+      "file": "frontend/src/app/features/quotes/steps/material-step.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-bends-step",
+      "file": "frontend/src/app/features/quotes/steps/bends-step.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-review-step",
+      "file": "frontend/src/app/features/quotes/steps/review-step.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-quote-detail",
+      "file": "frontend/src/app/features/quotes/quote-detail.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-workbed-canvas",
+      "file": "frontend/src/app/shared/workbed/workbed-canvas.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-bend-editor-canvas",
+      "file": "frontend/src/app/shared/bend-editor/bend-editor-canvas.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-checkout-review",
+      "file": "frontend/src/app/features/checkout/checkout-review.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-checkout-shipping",
+      "file": "frontend/src/app/features/checkout/checkout-shipping.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-payment-return",
+      "file": "frontend/src/app/features/checkout/payment-return.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-order-list",
+      "file": "frontend/src/app/features/orders/order-list.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-order-confirmation",
+      "file": "frontend/src/app/features/orders/confirmation.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-account",
+      "file": "frontend/src/app/features/account/account.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-forbidden",
+      "file": "frontend/src/app/shared/states/forbidden.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-not-found",
+      "file": "frontend/src/app/shared/states/not-found.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-admin-materials",
+      "file": "frontend/src/app/features/admin/admin-materials.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-admin-pricing",
+      "file": "frontend/src/app/features/admin/admin-pricing.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-admin-machine",
+      "file": "frontend/src/app/features/admin/admin-machine.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-admin-settings",
+      "file": "frontend/src/app/features/admin/admin-settings.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-business-shell",
+      "file": "frontend/src/app/features/admin/business/business-shell.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-admin-branding",
+      "file": "frontend/src/app/features/admin/business/branding.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-admin-contact",
+      "file": "frontend/src/app/features/admin/business/contact.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-admin-payment",
+      "file": "frontend/src/app/features/admin/business/payment.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-admin-shipping",
+      "file": "frontend/src/app/features/admin/business/shipping.component.ts",
+      "maxLines": 400
+    }
   ],
   "testIds": [
-    { "id": "app-ready", "element": "div", "component": "app-root" },
-    { "id": "home-main", "element": "main", "component": "app-home" },
-    { "id": "home-title", "element": "h1", "component": "app-home" },
-    { "id": "users-loading", "element": "p", "component": "app-home" },
-    { "id": "users-error", "element": "p", "component": "app-home" },
-    { "id": "users-list", "element": "ul", "component": "app-home" },
-    { "id": "user-item-{id}", "element": "li", "component": "app-home" }
+    {
+      "id": "app-ready",
+      "element": "div",
+      "component": "app-root"
+    },
+    {
+      "id": "app-shell",
+      "element": "div",
+      "component": "app-shell"
+    },
+    {
+      "id": "user-menu",
+      "element": "button",
+      "component": "app-shell"
+    },
+    {
+      "id": "logout-button",
+      "element": "button",
+      "component": "app-shell"
+    },
+    {
+      "id": "admin-nav",
+      "element": "span",
+      "component": "app-shell"
+    },
+    {
+      "id": "login-email",
+      "element": "input",
+      "component": "app-login"
+    },
+    {
+      "id": "login-password",
+      "element": "input",
+      "component": "app-login"
+    },
+    {
+      "id": "login-submit",
+      "element": "button",
+      "component": "app-login"
+    },
+    {
+      "id": "login-error",
+      "element": "div",
+      "component": "app-login"
+    },
+    {
+      "id": "signup-email",
+      "element": "input",
+      "component": "app-signup"
+    },
+    {
+      "id": "signup-password",
+      "element": "input",
+      "component": "app-signup"
+    },
+    {
+      "id": "signup-submit",
+      "element": "button",
+      "component": "app-signup"
+    },
+    {
+      "id": "signup-email-error",
+      "element": "span",
+      "component": "app-signup"
+    },
+    {
+      "id": "new-quote-button",
+      "element": "a",
+      "component": "app-quote-list"
+    },
+    {
+      "id": "quote-list",
+      "element": "table",
+      "component": "app-quote-list"
+    },
+    {
+      "id": "quote-row-{id}",
+      "element": "tr",
+      "component": "app-quote-list"
+    },
+    {
+      "id": "quote-list-empty",
+      "element": "div",
+      "component": "app-quote-list"
+    },
+    {
+      "id": "wizard-next",
+      "element": "button",
+      "component": "app-quote-new"
+    },
+    {
+      "id": "wizard-back",
+      "element": "button",
+      "component": "app-quote-new"
+    },
+    {
+      "id": "wizard-stepper",
+      "element": "ol",
+      "component": "app-quote-new"
+    },
+    {
+      "id": "upload-file-input",
+      "element": "input",
+      "component": "app-upload-step"
+    },
+    {
+      "id": "upload-progress",
+      "element": "div",
+      "component": "app-upload-step"
+    },
+    {
+      "id": "upload-error",
+      "element": "div",
+      "component": "app-upload-step"
+    },
+    {
+      "id": "geometry-summary",
+      "element": "section",
+      "component": "app-upload-step"
+    },
+    {
+      "id": "material-select",
+      "element": "ul",
+      "component": "app-material-step"
+    },
+    {
+      "id": "quantity-input",
+      "element": "input",
+      "component": "app-material-step"
+    },
+    {
+      "id": "quantity-error",
+      "element": "p",
+      "component": "app-material-step"
+    },
+    {
+      "id": "bend-mode-toggle",
+      "element": "button",
+      "component": "app-bends-step"
+    },
+    {
+      "id": "bend-angle-input",
+      "element": "input",
+      "component": "app-bends-step"
+    },
+    {
+      "id": "bend-direction-select",
+      "element": "select",
+      "component": "app-bends-step"
+    },
+    {
+      "id": "bend-save-button",
+      "element": "button",
+      "component": "app-bends-step"
+    },
+    {
+      "id": "bend-delete-button",
+      "element": "button",
+      "component": "app-bends-step"
+    },
+    {
+      "id": "bend-list",
+      "element": "ul",
+      "component": "app-bends-step"
+    },
+    {
+      "id": "bend-editor-canvas",
+      "element": "canvas",
+      "component": "app-bend-editor-canvas"
+    },
+    {
+      "id": "nested-preview",
+      "element": "div",
+      "component": "app-review-step"
+    },
+    {
+      "id": "price-breakdown",
+      "element": "div",
+      "component": "app-review-step"
+    },
+    {
+      "id": "issue-quote-button",
+      "element": "button",
+      "component": "app-review-step"
+    },
+    {
+      "id": "workbed-canvas",
+      "element": "canvas",
+      "component": "app-workbed-canvas"
+    },
+    {
+      "id": "print-bed-button",
+      "element": "button",
+      "component": "app-quote-detail"
+    },
+    {
+      "id": "breakdown-panel",
+      "element": "div",
+      "component": "app-quote-detail"
+    },
+    {
+      "id": "share-modal",
+      "element": "div",
+      "component": "app-quote-detail"
+    },
+    {
+      "id": "checkout-button",
+      "element": "button",
+      "component": "app-quote-detail"
+    },
+    {
+      "id": "checkout-review",
+      "element": "div",
+      "component": "app-checkout-review"
+    },
+    {
+      "id": "checkout-continue-button",
+      "element": "a",
+      "component": "app-checkout-review"
+    },
+    {
+      "id": "shipping-option-{id}",
+      "element": "button",
+      "component": "app-checkout-shipping"
+    },
+    {
+      "id": "shipping-address-form",
+      "element": "form",
+      "component": "app-checkout-shipping"
+    },
+    {
+      "id": "shipping-blocked-message",
+      "element": "div",
+      "component": "app-checkout-shipping"
+    },
+    {
+      "id": "pay-button",
+      "element": "button",
+      "component": "app-checkout-shipping"
+    },
+    {
+      "id": "payment-confirming",
+      "element": "div",
+      "component": "app-payment-return"
+    },
+    {
+      "id": "payment-retry-button",
+      "element": "button",
+      "component": "app-payment-return"
+    },
+    {
+      "id": "order-list",
+      "element": "table",
+      "component": "app-order-list"
+    },
+    {
+      "id": "order-row-{id}",
+      "element": "tr",
+      "component": "app-order-list"
+    },
+    {
+      "id": "order-confirmation",
+      "element": "div",
+      "component": "app-order-confirmation"
+    },
+    {
+      "id": "order-number",
+      "element": "span",
+      "component": "app-order-confirmation"
+    },
+    {
+      "id": "confirmation-number",
+      "element": "span",
+      "component": "app-order-confirmation"
+    },
+    {
+      "id": "account-page",
+      "element": "div",
+      "component": "app-account"
+    },
+    {
+      "id": "account-signout-button",
+      "element": "button",
+      "component": "app-account"
+    },
+    {
+      "id": "material-create-button",
+      "element": "button",
+      "component": "app-admin-materials"
+    },
+    {
+      "id": "material-list",
+      "element": "table",
+      "component": "app-admin-materials"
+    },
+    {
+      "id": "material-row-{id}",
+      "element": "tr",
+      "component": "app-admin-materials"
+    },
+    {
+      "id": "material-edit-modal",
+      "element": "div",
+      "component": "app-admin-materials"
+    },
+    {
+      "id": "material-name-input",
+      "element": "input",
+      "component": "app-admin-materials"
+    },
+    {
+      "id": "material-multiplier-input",
+      "element": "input",
+      "component": "app-admin-materials"
+    },
+    {
+      "id": "material-save-button",
+      "element": "button",
+      "component": "app-admin-materials"
+    },
+    {
+      "id": "admin-pricing-form",
+      "element": "form",
+      "component": "app-admin-pricing"
+    },
+    {
+      "id": "admin-machine-form",
+      "element": "form",
+      "component": "app-admin-machine"
+    },
+    {
+      "id": "admin-settings-list",
+      "element": "ul",
+      "component": "app-admin-settings"
+    },
+    {
+      "id": "integration-banner",
+      "element": "div",
+      "component": "app-admin-settings"
+    },
+    {
+      "id": "integration-row-{key}",
+      "element": "li",
+      "component": "app-admin-settings"
+    },
+    {
+      "id": "branding-form",
+      "element": "form",
+      "component": "app-admin-branding"
+    },
+    {
+      "id": "contact-form",
+      "element": "form",
+      "component": "app-admin-contact"
+    },
+    {
+      "id": "payment-form",
+      "element": "form",
+      "component": "app-admin-payment"
+    },
+    {
+      "id": "shipping-methods-list",
+      "element": "table",
+      "component": "app-admin-shipping"
+    },
+    {
+      "id": "shipping-create-button",
+      "element": "button",
+      "component": "app-admin-shipping"
+    }
   ]
 }

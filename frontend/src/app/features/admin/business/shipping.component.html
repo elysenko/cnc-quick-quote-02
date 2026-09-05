@@ -1,0 +1,175 @@
+<div class="page" data-testid="admin-shipping-page">
+  <div class="page-head">
+    <div>
+      <h1>Shipping methods</h1>
+      <p class="sub">
+        Delivery options offered at checkout. Flat rates are charged once per order; per-sheet rates
+        scale with the nested sheet count.
+      </p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="openCreate()" data-testid="shipping-create-button">
+      New method
+    </button>
+  </div>
+
+  @if (saved()) {
+    <div class="alert alert-ok" role="status" data-testid="shipping-saved-banner">{{ savedMessage() }}</div>
+  }
+
+  @if (activeMethods().length === 0) {
+    <div class="alert alert-warn" role="alert" data-testid="shipping-none-active">
+      No shipping method is active. Customers cannot complete checkout and will see the “contact the
+      company” blocking message instead.
+    </div>
+  }
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Catalogue</h2>
+      <span class="badge badge-neutral" data-testid="shipping-active-count">
+        {{ activeMethods().length }} of {{ methods().length }} active
+      </span>
+    </div>
+
+    @if (loading()) {
+      <div class="card-body stack" data-testid="shipping-loading">
+        @for (row of skeletonRows; track row) {
+          <span class="skeleton"></span>
+        }
+      </div>
+    } @else if (loadError()) {
+      <div class="card-body" data-testid="shipping-error">
+        <div class="alert alert-error">{{ loadError() }}</div>
+      </div>
+    } @else if (methods().length === 0) {
+      <div class="empty" data-testid="shipping-empty">
+        <h3>No shipping methods yet</h3>
+        <p class="muted">Add at least one method so customers can complete an order.</p>
+        <button type="button" class="btn btn-primary" (click)="openCreate()" data-testid="shipping-empty-create">
+          Add a shipping method
+        </button>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="data" data-testid="shipping-methods-list">
+          <thead>
+            <tr>
+              <th scope="col">Method</th>
+              <th scope="col">Rate type</th>
+              <th scope="col">Rate</th>
+              <th scope="col">Est. delivery</th>
+              <th scope="col">Status</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of methods(); track m.id) {
+              <tr [attr.data-testid]="'shipping-row-' + m.id">
+                <td>
+                  <strong>{{ m.name }}</strong>
+                  <span class="muted mono small id-tag">{{ m.id }}</span>
+                </td>
+                <td>{{ m.rateType === 'perSheet' ? 'Per sheet' : 'Flat' }}</td>
+                <td class="mono">{{ rateLabel(m) }}</td>
+                <td class="mono">{{ deliveryLabel(m) }}</td>
+                <td>
+                  <span class="badge" [class.badge-ok]="m.isActive" [class.badge-neutral]="!m.isActive">
+                    {{ m.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="row actions">
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="openEdit(m)" [attr.data-testid]="'shipping-edit-' + m.id">
+                      Edit
+                    </button>
+                    <button type="button" class="btn btn-quiet btn-sm" (click)="toggleActive(m)" [attr.data-testid]="'shipping-toggle-' + m.id">
+                      {{ m.isActive ? 'Deactivate' : 'Activate' }}
+                    </button>
+                    <button type="button" class="btn btn-quiet btn-sm danger" (click)="remove(m)" [attr.data-testid]="'shipping-delete-' + m.id">
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+@if (editorOpen()) {
+  <div class="modal-scrim" (click)="closeEditor()" data-testid="shipping-modal-scrim">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="shipping-modal-title" data-testid="shipping-edit-modal">
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate data-testid="shipping-form">
+        <div class="card-head">
+          <h2 id="shipping-modal-title">{{ editingId() ? 'Edit shipping method' : 'New shipping method' }}</h2>
+          @if (editingId()) {
+            <span class="badge badge-neutral mono">{{ editingId() }}</span>
+          }
+        </div>
+
+        <div class="card-body">
+          <div class="field">
+            <label for="s-name">Method name</label>
+            <input id="s-name" type="text" formControlName="name" autocomplete="off" placeholder="e.g. Standard courier"
+              [class.invalid]="form.controls.name.touched && form.controls.name.invalid"
+              data-testid="shipping-name-input" />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <p class="field-error" data-testid="shipping-name-error">A method name is required.</p>
+            } @else {
+              <p class="hint">Shown in the checkout shipping selector.</p>
+            }
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="s-type">Rate type</label>
+              <select id="s-type" formControlName="rateType" data-testid="shipping-rate-type-input">
+                <option value="flat">Flat — charged once per order</option>
+                <option value="perSheet">Per sheet — multiplied by sheet count</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="s-rate">Rate ($)</label>
+              <input id="s-rate" type="number" step="0.01" min="0" formControlName="rate"
+                [class.invalid]="form.controls.rate.touched && form.controls.rate.invalid"
+                data-testid="shipping-rate-input" />
+              @if (form.controls.rate.touched && form.controls.rate.invalid) {
+                <p class="field-error" data-testid="shipping-rate-error">Enter a rate of $0.00 or more.</p>
+              } @else {
+                <p class="hint">Stored as integer cents.</p>
+              }
+            </div>
+
+            <div class="field">
+              <label for="s-days">Estimated delivery (days)</label>
+              <input id="s-days" type="number" step="1" min="0" formControlName="estDeliveryDays"
+                [class.invalid]="form.controls.estDeliveryDays.touched && form.controls.estDeliveryDays.invalid"
+                data-testid="shipping-days-input" />
+              @if (form.controls.estDeliveryDays.touched && form.controls.estDeliveryDays.invalid) {
+                <p class="field-error">Enter between 0 and 90 days.</p>
+              } @else {
+                <p class="hint">Business days after despatch. 0 means same day.</p>
+              }
+            </div>
+          </div>
+
+          <label class="check">
+            <input type="checkbox" formControlName="isActive" data-testid="shipping-active-input" />
+            <span>Active — offered to customers at checkout</span>
+          </label>
+        </div>
+
+        <div class="card-foot">
+          <button type="button" class="btn btn-ghost" (click)="closeEditor()" data-testid="shipping-cancel-button">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-testid="shipping-save-button">
+            {{ editingId() ? 'Save changes' : 'Create method' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

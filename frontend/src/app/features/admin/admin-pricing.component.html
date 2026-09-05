@@ -1,0 +1,214 @@
+<div class="page" data-testid="admin-pricing-page">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Pricing settings</h1>
+      <p class="sub">
+        The rate card the quote engine applies to every new job — entered in dollars, stored as
+        integer cents.
+      </p>
+    </div>
+    <div class="row">
+      <button type="button" class="btn btn-ghost" (click)="revert()" data-testid="pricing-revert-button">Revert</button>
+      <button type="submit" form="admin-pricing-form" class="btn btn-primary" data-testid="pricing-save-button">
+        Save pricing
+      </button>
+    </div>
+  </div>
+
+  @if (saved()) {
+    <div class="alert alert-ok" role="status" data-testid="pricing-saved-banner">
+      Saved — new quotes will use this rate card from now on.
+    </div>
+  }
+  @if (saveError()) {
+    <div class="alert alert-error" role="alert" data-testid="pricing-error">{{ saveError() }}</div>
+  }
+
+  <div class="split">
+    <div class="card">
+      <div class="card-head"><h2>Rate card</h2></div>
+      <form
+        id="admin-pricing-form"
+        class="card-body"
+        [formGroup]="form"
+        (ngSubmit)="save()"
+        novalidate
+        data-testid="admin-pricing-form"
+      >
+        <div class="form-grid">
+          <div class="field">
+            <label for="p-setup">Setup fee</label>
+            <div class="money-input">
+              <span class="prefix" aria-hidden="true">$</span>
+              <input id="p-setup" type="number" step="0.01" min="0" formControlName="setupFee"
+                [class.invalid]="form.controls.setupFee.touched && form.controls.setupFee.invalid"
+                data-testid="pricing-setup-fee-input" />
+            </div>
+            @if (form.controls.setupFee.touched && form.controls.setupFee.invalid) {
+              <p class="field-error">Enter a setup fee of $0.00 or more.</p>
+            } @else {
+              <p class="hint">Charged once per job = <strong>{{ hint(draft().setupFee) }}</strong></p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="p-cut">Cost per linear foot</label>
+            <div class="money-input">
+              <span class="prefix" aria-hidden="true">$</span>
+              <input id="p-cut" type="number" step="0.01" min="0" formControlName="costPerLinearFoot"
+                [class.invalid]="form.controls.costPerLinearFoot.touched && form.controls.costPerLinearFoot.invalid"
+                data-testid="pricing-linear-foot-input" />
+            </div>
+            @if (form.controls.costPerLinearFoot.touched && form.controls.costPerLinearFoot.invalid) {
+              <p class="field-error">Enter a cutting rate of $0.00 or more.</p>
+            } @else {
+              <p class="hint">Applied to total cut path = <strong>{{ hint(draft().costPerLinearFoot) }}</strong></p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="p-sheet">Cost per sheet</label>
+            <div class="money-input">
+              <span class="prefix" aria-hidden="true">$</span>
+              <input id="p-sheet" type="number" step="0.01" min="0" formControlName="perSheetCost"
+                [class.invalid]="form.controls.perSheetCost.touched && form.controls.perSheetCost.invalid"
+                data-testid="pricing-per-sheet-input" />
+            </div>
+            @if (form.controls.perSheetCost.touched && form.controls.perSheetCost.invalid) {
+              <p class="field-error">Enter a sheet cost of $0.00 or more.</p>
+            } @else {
+              <p class="hint">Before the material multiplier = <strong>{{ hint(draft().perSheetCost) }}</strong></p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="p-handling">Handling fee</label>
+            <div class="money-input">
+              <span class="prefix" aria-hidden="true">$</span>
+              <input id="p-handling" type="number" step="0.01" min="0" formControlName="handlingFee"
+                [class.invalid]="form.controls.handlingFee.touched && form.controls.handlingFee.invalid"
+                data-testid="pricing-handling-input" />
+            </div>
+            @if (form.controls.handlingFee.touched && form.controls.handlingFee.invalid) {
+              <p class="field-error">Enter a handling fee of $0.00 or more.</p>
+            } @else {
+              <p class="hint">Deburr and packing = <strong>{{ hint(draft().handlingFee) }}</strong></p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="p-bend">Cost per bend</label>
+            <div class="money-input">
+              <span class="prefix" aria-hidden="true">$</span>
+              <input id="p-bend" type="number" step="0.01" min="0" formControlName="costPerBend"
+                [class.invalid]="form.controls.costPerBend.touched && form.controls.costPerBend.invalid"
+                data-testid="pricing-per-bend-input" />
+            </div>
+            @if (form.controls.costPerBend.touched && form.controls.costPerBend.invalid) {
+              <p class="field-error">Enter a bend cost of $0.00 or more.</p>
+            } @else {
+              <p class="hint">Per bend line, per part = <strong>{{ hint(draft().costPerBend) }}</strong></p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="p-min">Minimum order</label>
+            <div class="money-input">
+              <span class="prefix" aria-hidden="true">$</span>
+              <input id="p-min" type="number" step="0.01" min="0" formControlName="minimumOrder"
+                [class.invalid]="form.controls.minimumOrder.touched && form.controls.minimumOrder.invalid"
+                data-testid="pricing-minimum-input" />
+            </div>
+            @if (form.controls.minimumOrder.touched && form.controls.minimumOrder.invalid) {
+              <p class="field-error">Enter a minimum of $0.00 or more.</p>
+            } @else {
+              <p class="hint">Floor applied to the total = <strong>{{ hint(draft().minimumOrder) }}</strong></p>
+            }
+          </div>
+        </div>
+
+        <h3 class="section-title">Quantity limits</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label for="p-qty-min">Minimum quantity</label>
+            <input id="p-qty-min" type="number" step="1" min="1" formControlName="qtyMin"
+              [class.invalid]="form.controls.qtyMin.touched && form.controls.qtyMin.invalid"
+              data-testid="pricing-qty-min-input" />
+            @if (form.controls.qtyMin.touched && form.controls.qtyMin.invalid) {
+              <p class="field-error">At least 1 part per quote.</p>
+            } @else {
+              <p class="hint">Smallest run a customer can request.</p>
+            }
+          </div>
+          <div class="field">
+            <label for="p-qty-max">Maximum quantity</label>
+            <input id="p-qty-max" type="number" step="1" min="1" formControlName="qtyMax"
+              [class.invalid]="form.controls.qtyMax.touched && form.controls.qtyMax.invalid"
+              data-testid="pricing-qty-max-input" />
+            @if (form.controls.qtyMax.touched && form.controls.qtyMax.invalid) {
+              <p class="field-error">Enter a maximum of 1 or more.</p>
+            } @else {
+              <p class="hint">Above this, the quote form asks for a manual enquiry.</p>
+            }
+          </div>
+        </div>
+      </form>
+      <div class="card-foot">
+        <button type="submit" form="admin-pricing-form" class="btn btn-primary" data-testid="pricing-save-button-foot">
+          Save pricing
+        </button>
+      </div>
+    </div>
+
+    <aside class="panel" data-testid="pricing-example-panel">
+      <p class="eyebrow">Live worked example</p>
+      <h3>10 × mount bracket</h3>
+      <p class="small muted">
+        {{ example.qty }} parts · {{ exampleFeet.toFixed(2) }} linear ft of cut · {{ example.sheets }}
+        sheet · {{ example.bends }} bend · ×{{ example.multiplier.toFixed(1) }} material multiplier.
+      </p>
+
+      <div class="lines" data-testid="pricing-example-lines">
+        @for (line of exampleLines(); track line.label) {
+          <div class="line">
+            <span>
+              <strong>{{ line.label }}</strong>
+              <span class="muted small detail">{{ line.detail }}</span>
+            </span>
+            <span class="amt">{{ money(line.amountCents) }}</span>
+          </div>
+        } @empty {
+          <div class="empty" data-testid="pricing-example-empty">
+            <h3>No priced lines</h3>
+            <p class="muted">Enter a rate card to see the example price.</p>
+          </div>
+        }
+        <div class="line">
+          <span class="muted">Subtotal</span>
+          <span class="amt">{{ money(exampleSubtotal()) }}</span>
+        </div>
+        @if (minimumApplied()) {
+          <div class="line" data-testid="pricing-minimum-applied">
+            <span class="muted">Minimum order uplift</span>
+            <span class="amt">+{{ money(exampleTotal() - exampleSubtotal()) }}</span>
+          </div>
+        }
+        <div class="line line-total">
+          <span>Quote total</span>
+          <span class="amt" data-testid="pricing-example-total">{{ money(exampleTotal()) }}</span>
+        </div>
+      </div>
+
+      <dl class="kv per-part">
+        <dt>Price per part</dt>
+        <dd data-testid="pricing-example-per-part">{{ money(examplePerPart()) }}</dd>
+      </dl>
+
+      <div class="alert alert-info note" data-testid="pricing-snapshot-note">
+        Changes apply to <strong>new quotes only</strong>. Quotes already issued keep the pricing
+        snapshot they were generated with, so a customer's saved total never moves.
+      </div>
+    </aside>
+  </div>
+</div>

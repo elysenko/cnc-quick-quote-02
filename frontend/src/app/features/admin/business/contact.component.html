@@ -1,0 +1,110 @@
+<div class="page" data-testid="admin-contact-page">
+  <div class="page-head">
+    <div>
+      <h1>Contact details</h1>
+      <p class="sub">
+        Where customers reach you — printed on every quote and used in the checkout fallback
+        message.
+      </p>
+    </div>
+    <div class="row">
+      <button type="button" class="btn btn-ghost" (click)="revert()" data-testid="contact-revert-button">Revert</button>
+      <button type="submit" form="contact-form" class="btn btn-primary" data-testid="contact-save-button">Save contact</button>
+    </div>
+  </div>
+
+  @if (saved()) {
+    <div class="alert alert-ok" role="status" data-testid="contact-saved-banner">
+      Saved — customer-facing contact details updated.
+    </div>
+  }
+
+  <div class="split">
+    <div class="card">
+      <div class="card-head"><h2>Company contact</h2></div>
+      <form id="contact-form" class="card-body" [formGroup]="form" (ngSubmit)="save()" novalidate data-testid="contact-form">
+        <div class="form-grid">
+          <div class="field">
+            <label for="c-email">Contact email</label>
+            <input id="c-email" type="email" formControlName="contactEmail" autocomplete="email" inputmode="email"
+              [class.invalid]="form.controls.contactEmail.touched && form.controls.contactEmail.invalid"
+              data-testid="contact-email-input" />
+            @if (form.controls.contactEmail.touched && form.controls.contactEmail.hasError('required')) {
+              <p class="field-error" data-testid="contact-email-error">A contact email is required.</p>
+            } @else if (form.controls.contactEmail.touched && form.controls.contactEmail.hasError('email')) {
+              <p class="field-error" data-testid="contact-email-error">Enter a valid email address, e.g. quotes&#64;example.com.</p>
+            } @else {
+              <p class="hint">Replies to order confirmations go here.</p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="c-phone">Contact phone</label>
+            <input id="c-phone" type="tel" formControlName="contactPhone" autocomplete="tel" inputmode="tel"
+              [class.invalid]="form.controls.contactPhone.touched && form.controls.contactPhone.invalid"
+              data-testid="contact-phone-input" />
+            @if (form.controls.contactPhone.touched && form.controls.contactPhone.invalid) {
+              <p class="field-error" data-testid="contact-phone-error">
+                Enter a phone number, digits and spaces only, e.g. +44 114 496 0100.
+              </p>
+            } @else {
+              <p class="hint">Shown when a customer needs to talk to the shop.</p>
+            }
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="c-line1">Address line 1</label>
+          <input id="c-line1" type="text" formControlName="addressLine1" autocomplete="address-line1"
+            [class.invalid]="form.controls.addressLine1.touched && form.controls.addressLine1.invalid"
+            data-testid="contact-address1-input" />
+          @if (form.controls.addressLine1.touched && form.controls.addressLine1.invalid) {
+            <p class="field-error" data-testid="contact-address1-error">Enter the street address.</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="c-line2">Address line 2</label>
+          <input id="c-line2" type="text" formControlName="addressLine2" autocomplete="address-line2"
+            data-testid="contact-address2-input" />
+          <p class="hint">Optional — town, postcode or unit number.</p>
+        </div>
+
+        <div class="field">
+          <label for="c-hours">Support hours</label>
+          <input id="c-hours" type="text" formControlName="supportHours" placeholder="Mon–Fri, 08:00–17:00 GMT"
+            [class.invalid]="form.controls.supportHours.touched && form.controls.supportHours.invalid"
+            data-testid="contact-hours-input" />
+          @if (form.controls.supportHours.touched && form.controls.supportHours.invalid) {
+            <p class="field-error" data-testid="contact-hours-error">Tell customers when you are reachable.</p>
+          } @else {
+            <p class="hint">Free text — displayed next to the phone number.</p>
+          }
+        </div>
+      </form>
+      <div class="card-foot">
+        <button type="submit" form="contact-form" class="btn btn-primary" data-testid="contact-save-button-foot">
+          Save contact
+        </button>
+      </div>
+    </div>
+
+    <aside class="panel" data-testid="contact-preview">
+      <p class="eyebrow">Customer sees</p>
+      <h3>{{ business().companyName }}</h3>
+      <address class="contact-block small">
+        <span>{{ draft().addressLine1 || '—' }}</span>
+        @if (draft().addressLine2) {
+          <span>{{ draft().addressLine2 }}</span>
+        }
+        <span class="mono">{{ draft().contactEmail || '—' }}</span>
+        <span class="mono">{{ draft().contactPhone || '—' }}</span>
+        <span class="muted">{{ draft().supportHours || '—' }}</span>
+      </address>
+      <div class="alert alert-info note">
+        This block appears in the quote footer and in the “contact the company” message shown at
+        checkout when no payment or shipping method is available.
+      </div>
+    </aside>
+  </div>
+</div>

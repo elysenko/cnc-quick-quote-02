@@ -1,0 +1,18 @@
+:host { display: block; }
+.page { padding: 0; max-width: none; }
+.page-head h1 { font-size: var(--fs-lg); }
+
+.contact-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  margin-top: var(--s-2);
+  padding: var(--s-3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-style: normal;
+  color: var(--ink-2);
+  word-break: break-word;
+}
+.note { margin: var(--s-4) 0 0; }

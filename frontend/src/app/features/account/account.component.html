@@ -1,0 +1,118 @@
+<div class="page" data-testid="account-page">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Account</p>
+      <h1>Your account</h1>
+      <p class="sub">Your sign-in details, default delivery address and shortcuts.</p>
+    </div>
+    <a class="btn btn-primary" routerLink="/quotes/new/upload" data-testid="account-new-quote">New quote</a>
+  </div>
+
+  <div class="split">
+    <div class="stack">
+      <section class="card" data-testid="account-identity-card">
+        <div class="card-head"><h2>Signed in as</h2></div>
+        <div class="card-body">
+          @if (user(); as u) {
+            <div class="identity">
+              <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+              <div class="identity-text">
+                <p class="name" data-testid="account-name">{{ u.name || 'Account holder' }}</p>
+                <p class="muted email" data-testid="account-email">{{ u.email }}</p>
+                <span [class]="'badge ' + roleClass(u.role)" data-testid="account-role">{{ u.role }}</span>
+              </div>
+            </div>
+            <dl class="kv facts">
+              <dt>Member since</dt>
+              <dd data-testid="account-member-since">{{ memberSince() | date: 'd MMMM y' }}</dd>
+              <dt>Orders placed</dt>
+              <dd data-testid="account-order-count">{{ orderCount() }}</dd>
+              <dt>Account for</dt>
+              <dd class="plain">{{ business().companyName }}</dd>
+            </dl>
+          } @else {
+            <div class="empty" data-testid="account-signed-out">
+              <h3>Not signed in</h3>
+              <p class="muted">Sign in to see your account details.</p>
+            </div>
+          }
+        </div>
+        <div class="card-foot">
+          <button type="button" class="btn btn-danger" (click)="signOut()" data-testid="account-signout-button">
+            Sign out
+          </button>
+        </div>
+      </section>
+
+      <section class="card" data-testid="account-address-card">
+        <div class="card-head">
+          <h2>Default shipping address</h2>
+          <span class="small muted">Used at checkout</span>
+        </div>
+        <div class="card-body">
+          @if (defaultAddress(); as a) {
+            <address class="addr">
+              <strong>{{ a.fullName }}</strong>
+              @if (a.company) { <span>{{ a.company }}</span> }
+              <span>{{ a.line1 }}</span>
+              @if (a.line2) { <span>{{ a.line2 }}</span> }
+              <span>{{ a.city }}, {{ a.region }}</span>
+              <span>{{ a.postcode }}</span>
+              <span>{{ a.country }}</span>
+              <span class="muted small">{{ a.phone }}</span>
+            </address>
+            <p class="small muted note">Prefilled at checkout — you can change it on any order.</p>
+          } @else {
+            <div class="empty" data-testid="account-address-empty">
+              <h3>No saved address</h3>
+              <p class="muted">Your first order's delivery address is saved here automatically.</p>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+
+    <aside class="stack">
+      <section class="card">
+        <div class="card-head"><h2>Quick links</h2></div>
+        <div class="card-body links">
+          <a class="btn btn-ghost btn-block" routerLink="/quotes/new/upload" data-testid="account-link-new-quote">New quote</a>
+          <a class="btn btn-ghost btn-block" routerLink="/quotes" data-testid="account-link-quotes">My quotes</a>
+          <a class="btn btn-ghost btn-block" routerLink="/orders" data-testid="account-link-orders">My orders</a>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Need help?</h2></div>
+        <div class="card-body">
+          <p class="small muted">
+            {{ business().companyName }} · {{ business().supportHours }}
+          </p>
+          <p class="small">
+            <a class="link" [href]="'mailto:' + business().contactEmail">{{ business().contactEmail }}</a><br />
+            {{ business().contactPhone }}
+          </p>
+        </div>
+      </section>
+
+      @if (isPreview) {
+        <section class="panel preview" data-testid="account-preview-role-panel">
+          <h3 class="preview-title">Preview role</h3>
+          <p class="small muted">
+            Mockup only. Switching to <strong>USER</strong> hides the Admin item in the navigation and makes any
+            <span class="mono">/admin/**</span> URL render the 403 “administrator access required” view.
+            Switch back to <strong>ADMIN</strong> to restore the admin area.
+          </p>
+          <div class="row">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="setRole('ADMIN')" data-testid="preview-role-admin">
+              Use ADMIN
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="setRole('USER')" data-testid="preview-role-user">
+              Use USER
+            </button>
+          </div>
+        </section>
+      }
+    </aside>
+  </div>
+</div>

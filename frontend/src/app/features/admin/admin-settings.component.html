@@ -1,0 +1,152 @@
+<div class="page" data-testid="admin-settings-page">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Integration settings</h1>
+      <p class="sub">
+        Credentials for the services this deployment depends on. Secrets are write-only — once
+        stored they are only ever shown masked.
+      </p>
+    </div>
+    <span class="badge" [class.badge-ok]="unconfigured().length === 0" [class.badge-warn]="unconfigured().length > 0" data-testid="integration-summary">
+      {{ integrations().length - unconfigured().length }} / {{ integrations().length }} configured
+    </span>
+  </div>
+
+  @if (unconfigured().length > 0) {
+    <div class="alert alert-warn" role="alert" data-testid="integration-banner"><span>The following need credentials to activate: Stripe SDK (Python) + Stripe Checkout Sessions, Resend API, MinIO / S3 (boto3), Redis.</span></div>
+  }
+
+  @if (loading()) {
+    <div class="card card-body stack" data-testid="integration-loading">
+      <span class="skeleton"></span>
+      <span class="skeleton"></span>
+    </div>
+  } @else if (loadError()) {
+    <div class="alert alert-error" role="alert" data-testid="integration-error">{{ loadError() }}</div>
+  } @else {
+    <div class="stack" data-testid="admin-settings-list">
+      <section class="card section">
+        <div class="card-head">
+          <div>
+            <h2>Provisioned services</h2>
+            <p class="small muted">Infrastructure supplied by the platform — connection details are managed for you.</p>
+          </div>
+          <span class="badge badge-neutral">{{ services().length }}</span>
+        </div>
+
+        @if (services().length === 0) {
+          <div class="empty" data-testid="services-empty">
+            <h3>No provisioned services</h3>
+            <p class="muted">Nothing has been attached to this deployment yet.</p>
+          </div>
+        } @else {
+          <ul class="rows">
+            @for (item of services(); track item.key) {
+              <li class="int-row" [attr.data-testid]="'integration-row-' + item.key">
+                <div class="int-main">
+                  <div class="row-between int-title">
+                    <strong>{{ item.label }}</strong>
+                    <span class="badge" [class.badge-ok]="item.configured" [class.badge-warn]="!item.configured"
+                      [attr.data-testid]="'integration-status-' + item.key">
+                      {{ item.configured ? 'Configured' : 'Needs credentials' }}
+                    </span>
+                  </div>
+                  <p class="small muted desc">{{ item.description }}</p>
+                  @if (item.configured && item.maskedValue) {
+                    <p class="mono small masked" [attr.data-testid]="'integration-masked-' + item.key">{{ item.maskedValue }}</p>
+                  }
+                </div>
+
+                <form class="int-form" (ngSubmit)="saveCredential(item)" novalidate>
+                  <label class="label sr-label" [attr.for]="'cred-' + item.key">Connection secret</label>
+                  <div class="row int-input">
+                    <input [id]="'cred-' + item.key" type="password" autocomplete="off"
+                      [formControl]="control(item.key)"
+                      [placeholder]="item.configured ? 'Enter a new value to rotate' : 'Paste connection secret'"
+                      [class.invalid]="control(item.key).touched && control(item.key).invalid"
+                      [attr.data-testid]="'integration-input-' + item.key" />
+                    <button type="submit" class="btn btn-ghost" [attr.data-testid]="'integration-save-' + item.key">Save</button>
+                  </div>
+                  @if (control(item.key).touched && control(item.key).invalid) {
+                    <p class="field-error" [attr.data-testid]="'integration-field-error-' + item.key">
+                      Enter at least 8 characters.
+                    </p>
+                  } @else if (savedKey() === item.key) {
+                    <p class="saved-note" role="status" [attr.data-testid]="'integration-saved-' + item.key">
+                      Saved — stored masked.
+                    </p>
+                  }
+                </form>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="card section">
+        <div class="card-head">
+          <div>
+            <h2>Integrations</h2>
+            <p class="small muted">Third-party APIs. Until a key is saved the matching feature stays disabled.</p>
+          </div>
+          <span class="badge badge-neutral">{{ thirdParty().length }}</span>
+        </div>
+
+        @if (thirdParty().length === 0) {
+          <div class="empty" data-testid="integrations-empty">
+            <h3>No integrations</h3>
+            <p class="muted">This build does not call any third-party APIs.</p>
+          </div>
+        } @else {
+          <ul class="rows">
+            @for (item of thirdParty(); track item.key) {
+              <li class="int-row" [attr.data-testid]="'integration-row-' + item.key">
+                <div class="int-main">
+                  <div class="row-between int-title">
+                    <strong>{{ item.label }}</strong>
+                    <span class="badge" [class.badge-ok]="item.configured" [class.badge-warn]="!item.configured"
+                      [attr.data-testid]="'integration-status-' + item.key">
+                      {{ item.configured ? 'Configured' : 'Needs credentials' }}
+                    </span>
+                  </div>
+                  <p class="small muted desc">{{ item.description }}</p>
+                  <p class="mono small key-name">{{ item.key }}</p>
+                  @if (item.configured && item.maskedValue) {
+                    <p class="mono small masked" [attr.data-testid]="'integration-masked-' + item.key">{{ item.maskedValue }}</p>
+                  }
+                </div>
+
+                <form class="int-form" (ngSubmit)="saveCredential(item)" novalidate>
+                  <label class="label sr-label" [attr.for]="'cred-' + item.key">API key</label>
+                  <div class="row int-input">
+                    <input [id]="'cred-' + item.key" type="password" autocomplete="off"
+                      [formControl]="control(item.key)"
+                      [placeholder]="item.configured ? 'Enter a new key to rotate' : 'Paste API key'"
+                      [class.invalid]="control(item.key).touched && control(item.key).invalid"
+                      [attr.data-testid]="'integration-input-' + item.key" />
+                    <button type="submit" class="btn btn-primary" [attr.data-testid]="'integration-save-' + item.key">Save</button>
+                  </div>
+                  @if (control(item.key).touched && control(item.key).invalid) {
+                    <p class="field-error" [attr.data-testid]="'integration-field-error-' + item.key">
+                      Enter at least 8 characters.
+                    </p>
+                  } @else if (savedKey() === item.key) {
+                    <p class="saved-note" role="status" [attr.data-testid]="'integration-saved-' + item.key">
+                      Saved — stored masked.
+                    </p>
+                  } @else if (item.configured) {
+                    <button type="button" class="btn btn-quiet btn-sm clear" (click)="clearCredential(item)"
+                      [attr.data-testid]="'integration-clear-' + item.key">
+                      Remove key
+                    </button>
+                  }
+                </form>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </div>
+  }
+</div>

@@ -1,0 +1,17 @@
+:host { display: block; }
+.page { padding: 0; max-width: none; }
+.page-head h1 { font-size: var(--fs-lg); }
+
+.id-tag { display: block; }
+table.data td .actions { flex-wrap: nowrap; gap: var(--s-1); }
+.btn.danger { color: var(--danger); }
+.btn.danger:hover { background: var(--danger-soft); }
+
+.modal .card-head { position: sticky; top: 0; z-index: 1; background: var(--surface); border-radius: var(--r-lg) var(--r-lg) 0 0; }
+.modal .card-foot { position: sticky; bottom: 0; }
+.modal .check { margin-top: var(--s-2); }
+.skeleton + .skeleton { width: 70%; }
+
+@media (max-width: 768px) {
+  table.data td .actions { flex-direction: column; align-items: stretch; }
+}

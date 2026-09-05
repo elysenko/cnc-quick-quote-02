@@ -1,0 +1,224 @@
+<div class="page" data-testid="checkout-shipping">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Checkout</p>
+      <h1>Delivery &amp; payment</h1>
+      <p class="sub">Choose how your parts ship, confirm the address, then pay securely with Stripe.</p>
+    </div>
+    <a class="btn btn-quiet btn-sm" [routerLink]="['/checkout', quoteId(), 'review']" data-testid="shipping-back-link">
+      Back to review
+    </a>
+  </div>
+
+  <ol class="steps" aria-label="Checkout progress" data-testid="checkout-steps">
+    <li class="step is-done"><span class="step-n">1</span>Review</li>
+    <li class="step is-current" aria-current="step"><span class="step-n">2</span>Shipping</li>
+    <li class="step"><span class="step-n">3</span>Payment</li>
+  </ol>
+
+  @if (simulateFailure()) {
+    <div class="alert alert-error" role="alert" data-testid="shipping-error-banner">
+      <span>Payment could not be processed. Please try again.</span>
+    </div>
+  }
+
+  @if (noActiveMethods()) {
+    <div class="alert alert-warn" role="alert" data-testid="shipping-blocked-message">
+      <span>
+        <strong>Delivery is unavailable right now.</strong>
+        No shipping methods are currently offered, so this order cannot be placed online. Please contact
+        {{ business().companyName }} at
+        <a class="link" [href]="'mailto:' + business().contactEmail">{{ business().contactEmail }}</a>
+        or {{ business().contactPhone }} and we will arrange delivery for you. Your quote is saved.
+      </span>
+    </div>
+  }
+
+  <div class="split">
+    <div class="stack">
+      <section class="card" data-testid="shipping-methods-card">
+        <div class="card-head">
+          <h2>Shipping method</h2>
+          @if (quote(); as q) {
+            <span class="small muted">{{ q.sheetCount }} sheet(s)</span>
+          }
+        </div>
+        <div class="card-body">
+          @if (availableMethods().length) {
+            <ul class="opts">
+              @for (m of availableMethods(); track m.id) {
+                <li>
+                  <label
+                    class="opt"
+                    [class.is-selected]="selectedId() === m.id"
+                    [attr.data-testid]="'shipping-option-' + m.id"
+                  >
+                    <input
+                      type="radio"
+                      name="shippingMethod"
+                      [value]="m.id"
+                      [checked]="selectedId() === m.id"
+                      (change)="select(m.id)"
+                    />
+                    <span class="opt-body">
+                      <span class="opt-name">{{ m.name }}</span>
+                      <span class="muted small">
+                        @if (m.estDeliveryDays === 1) {
+                          Next business day
+                        } @else {
+                          Approx. {{ m.estDeliveryDays }} business days
+                        }
+                        · {{ rateExplanation(m) }}
+                      </span>
+                    </span>
+                    <span class="opt-price mono">{{ money(costOf(m)) }}</span>
+                  </label>
+                </li>
+              }
+            </ul>
+          } @else {
+            <div class="empty" data-testid="shipping-methods-empty">
+              <h3>No delivery options available</h3>
+              <p class="muted">We cannot ship this order online at the moment.</p>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Shipping address</h2></div>
+        <form class="card-body" [formGroup]="form" data-testid="shipping-address-form" (ngSubmit)="pay()">
+          <div class="form-grid">
+            <div class="field">
+              <label for="fullName">Full name</label>
+              <input id="fullName" formControlName="fullName" autocomplete="name"
+                     [class.invalid]="invalid('fullName')" data-testid="shipping-field-fullname" />
+              @if (invalid('fullName')) {
+                <span class="field-error" data-testid="shipping-error-fullname">Full name is required.</span>
+              }
+            </div>
+            <div class="field">
+              <label for="company">Company <span class="muted small">(optional)</span></label>
+              <input id="company" formControlName="company" autocomplete="organization" data-testid="shipping-field-company" />
+            </div>
+            <div class="field">
+              <label for="line1">Address line 1</label>
+              <input id="line1" formControlName="line1" autocomplete="address-line1"
+                     [class.invalid]="invalid('line1')" data-testid="shipping-field-line1" />
+              @if (invalid('line1')) {
+                <span class="field-error" data-testid="shipping-error-line1">Address line 1 is required.</span>
+              }
+            </div>
+            <div class="field">
+              <label for="line2">Address line 2 <span class="muted small">(optional)</span></label>
+              <input id="line2" formControlName="line2" autocomplete="address-line2" data-testid="shipping-field-line2" />
+            </div>
+            <div class="field">
+              <label for="city">City</label>
+              <input id="city" formControlName="city" autocomplete="address-level2"
+                     [class.invalid]="invalid('city')" data-testid="shipping-field-city" />
+              @if (invalid('city')) {
+                <span class="field-error" data-testid="shipping-error-city">City is required.</span>
+              }
+            </div>
+            <div class="field">
+              <label for="region">County / region</label>
+              <input id="region" formControlName="region" autocomplete="address-level1"
+                     [class.invalid]="invalid('region')" data-testid="shipping-field-region" />
+              @if (invalid('region')) {
+                <span class="field-error" data-testid="shipping-error-region">Region is required.</span>
+              }
+            </div>
+            <div class="field">
+              <label for="postcode">Postcode</label>
+              <input id="postcode" formControlName="postcode" autocomplete="postal-code"
+                     [class.invalid]="invalid('postcode')" data-testid="shipping-field-postcode" />
+              @if (invalid('postcode')) {
+                <span class="field-error" data-testid="shipping-error-postcode">Postcode is required.</span>
+              }
+            </div>
+            <div class="field">
+              <label for="country">Country</label>
+              <input id="country" formControlName="country" autocomplete="country-name"
+                     [class.invalid]="invalid('country')" data-testid="shipping-field-country" />
+              @if (invalid('country')) {
+                <span class="field-error" data-testid="shipping-error-country">Country is required.</span>
+              }
+            </div>
+            <div class="field">
+              <label for="phone">Phone</label>
+              <input id="phone" formControlName="phone" type="tel" autocomplete="tel"
+                     [class.invalid]="invalid('phone')" data-testid="shipping-field-phone" />
+              @if (invalid('phone')) {
+                <span class="field-error" data-testid="shipping-error-phone">A contact phone number is required for the courier.</span>
+              }
+            </div>
+          </div>
+          <p class="small muted note">Used for the delivery label and courier contact only.</p>
+        </form>
+      </section>
+
+      <section class="panel preview" data-testid="shipping-preview-panel">
+        <p class="small"><strong>Preview controls</strong> — mockup only, not part of the customer flow.</p>
+        <div class="row">
+          <button type="button" class="btn btn-ghost btn-sm" (click)="toggleNoMethods()" data-testid="shipping-preview-no-methods">
+            Preview: simulate no active shipping methods{{ noActiveMethods() ? ' (on)' : '' }}
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="toggleFailure()" data-testid="shipping-preview-503">
+            Preview: simulate 503 from payment service{{ simulateFailure() ? ' (on)' : '' }}
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <aside class="summary">
+      <div class="card">
+        <div class="card-head"><h2>Order total</h2></div>
+        <div class="card-body">
+          @if (quote(); as q) {
+            <div class="line">
+              <span>Parts &amp; processing<br /><span class="muted small">{{ q.reference }} · {{ q.quantity }} × {{ q.materialName }}</span></span>
+              <span class="amt">{{ money(q.totalCents) }}</span>
+            </div>
+          }
+          <div class="line">
+            <span>
+              Shipping
+              @if (selected(); as m) {
+                <br /><span class="muted small">{{ m.name }} · {{ rateExplanation(m) }}</span>
+              }
+            </span>
+            <span class="amt" data-testid="shipping-cost">
+              @if (selected()) { {{ money(shippingCents()) }} } @else { <span class="muted">Not selected</span> }
+            </span>
+          </div>
+          <div class="line line-total">
+            <span>Total due</span>
+            <span class="amt" data-testid="shipping-running-total">{{ money(totalCents()) }}</span>
+          </div>
+          <p class="small muted note" data-testid="stripe-note">
+            Payment is hosted by Stripe. You will be redirected to Stripe Checkout to enter card details —
+            {{ business().companyName }} never sees or stores your card number.
+          </p>
+        </div>
+        <div class="card-foot actions">
+          <button
+            type="button"
+            class="btn btn-primary btn-lg btn-block"
+            [disabled]="!canPay()"
+            (click)="pay()"
+            data-testid="pay-button"
+          >
+            @if (redirecting()) { Redirecting to Stripe… } @else { Pay securely with Stripe }
+          </button>
+          @if (!selected() && !noActiveMethods()) {
+            <p class="small muted foot-hint" data-testid="pay-hint">Choose a shipping method to continue.</p>
+          }
+          @if (redirecting()) {
+            <div class="progress redirect-bar" role="status" aria-label="Redirecting to Stripe"><span></span></div>
+          }
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>

@@ -1,0 +1,162 @@
+@if (quote(); as quote) {
+  <div class="page" data-testid="quote-detail-page">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">Quote {{ quote.reference }}</p>
+        <h1>{{ quote.drawingName }}</h1>
+        <p class="sub">
+          {{ quote.materialName }} · {{ quote.quantity }} off · issued
+          {{ quote.createdAt | slice: 0 : 10 }}
+        </p>
+      </div>
+      <div class="row">
+        <button type="button" class="btn btn-ghost" (click)="openModal('share')" data-testid="share-quote-button">
+          Share
+        </button>
+        @if (quote.status === 'draft') {
+          <button type="button" class="btn btn-primary" (click)="goCheckout()" data-testid="checkout-button">
+            Checkout — {{ money(quote.totalCents) }}
+          </button>
+        } @else {
+          <a class="btn btn-ghost" routerLink="/orders" data-testid="view-order-button">View order</a>
+        }
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="stack">
+        <section class="card">
+          <div class="card-head">
+            <h2>Work bed</h2>
+            <div class="row">
+              @if (sheetNumbers().length > 1) {
+                <div class="chip-row">
+                  @for (n of sheetNumbers(); track n) {
+                    <button type="button" class="chip" [class.active]="n === sheetIndex()"
+                            (click)="showSheet(n)" [attr.data-testid]="'detail-sheet-' + n">Sheet {{ n }}</button>
+                  }
+                </div>
+              }
+              <button type="button" class="btn btn-accent btn-sm" (click)="togglePrintBed()"
+                      data-testid="print-bed-button">
+                {{ running() ? 'Stop and reset bed' : 'Print bed' }}
+              </button>
+            </div>
+          </div>
+          <app-workbed-canvas
+            [paths]="drawing()?.paths ?? []"
+            [placements]="quote.placements"
+            [bends]="bends()"
+            [sheetWidthMm]="material()?.sheetWidthMm ?? 1220"
+            [sheetHeightMm]="material()?.sheetHeightMm ?? 2440"
+            [sheetIndex]="sheetIndex()"
+            [autoStart]="true"
+          />
+          <div class="card-body">
+            <div class="review-metrics">
+              <div class="metric"><div class="v">{{ quote.sheetCount }}</div><div class="k">Sheets</div></div>
+              <div class="metric"><div class="v">{{ quote.perSheet }}</div><div class="k">Per sheet</div></div>
+              <div class="metric"><div class="v">{{ (quote.utilization * 100).toFixed(1) }}%</div><div class="k">Utilisation</div></div>
+              <div class="metric"><div class="v">{{ quote.bendCount }}</div><div class="k">Bends</div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h3>Drawing</h3></div>
+          <div class="card-body">
+            <dl class="kv">
+              <dt>File</dt><dd class="mono">{{ quote.drawingName }}</dd>
+              <dt>Entities</dt><dd>{{ drawing()?.entityCount }}</dd>
+              <dt>Cut length per part</dt><dd>{{ drawing()?.cutLengthMm }} mm</dd>
+              <dt>Cut length total</dt><dd>{{ quote.cutLengthMmTotal }} mm</dd>
+              <dt>Part size</dt><dd>{{ drawing()?.bboxWMm }} × {{ drawing()?.bboxHMm }} mm</dd>
+            </dl>
+          </div>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="card">
+          <div class="card-head">
+            <h3>Total</h3>
+            <button type="button" class="btn btn-quiet btn-sm" (click)="togglePanel()"
+                    data-testid="breakdown-toggle">
+              {{ panel() === 'breakdown' ? 'Hide breakdown' : 'Show breakdown' }}
+            </button>
+          </div>
+          <div class="card-body">
+            <p class="big-total mono" data-testid="quote-total">{{ money(quote.totalCents) }}</p>
+            <p class="muted small">
+              This price is locked to the quote. Workshop price changes do not affect it.
+            </p>
+            @if (panel() === 'breakdown') {
+              <div data-testid="breakdown-panel">
+                @for (line of quote.breakdown; track line.label) {
+                  <div class="line">
+                    <span>{{ line.label }}<br /><span class="muted small">{{ line.detail }}</span></span>
+                    <span class="amt">{{ money(line.amountCents) }}</span>
+                  </div>
+                }
+                <div class="line line-total"><span>Total</span><span class="amt">{{ money(quote.totalCents) }}</span></div>
+              </div>
+            }
+          </div>
+          <div class="card-foot">
+            @if (quote.status === 'draft') {
+              <button type="button" class="btn btn-primary btn-block" (click)="goCheckout()"
+                      data-testid="checkout-button-side">Proceed to checkout</button>
+            } @else {
+              <span class="badge badge-ok">Ordered</span>
+            }
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h3>Bend schedule</h3></div>
+          <div class="card-body">
+            @if (bends().length === 0) {
+              <p class="muted small" data-testid="detail-no-bends">Flat part — no bending operations.</p>
+            } @else {
+              <ul class="stack" data-testid="detail-bend-list">
+                @for (bend of bends(); track bend.id) {
+                  <li class="row-between small">
+                    <span class="mono">{{ bend.angleDeg }}° {{ bend.direction }}</span>
+                    <span class="muted">along ({{ bend.startX.toFixed(0) }}, {{ bend.startY.toFixed(0) }})</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  @if (modal() === 'share') {
+    <div class="modal-scrim" (click)="closeModal()" data-testid="share-modal">
+      <div class="modal card-pad" (click)="$event.stopPropagation()">
+        <h2>Share this quote</h2>
+        <p class="muted small">Anyone with this link and access to your account can view the quote.</p>
+        <div class="field">
+          <label for="share-link">Quote link</label>
+          <input id="share-link" type="text" readonly [value]="'/quotes/' + quote.id" data-testid="share-link" />
+        </div>
+        <div class="row-between">
+          <span class="badge badge-neutral mono">{{ quote.reference }}</span>
+          <button type="button" class="btn btn-primary" (click)="closeModal()" data-testid="share-close">Done</button>
+        </div>
+      </div>
+    </div>
+  }
+} @else {
+  <div class="page">
+    <div class="card">
+      <div class="empty" data-testid="quote-not-found">
+        <h3>Quote not found</h3>
+        <p class="muted small">This quote does not exist, or it belongs to another account.</p>
+        <a class="btn btn-primary" routerLink="/quotes">Back to quotes</a>
+      </div>
+    </div>
+  </div>
+}

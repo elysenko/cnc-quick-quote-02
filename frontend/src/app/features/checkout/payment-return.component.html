@@ -1,0 +1,88 @@
+<div class="page narrow" data-testid="payment-return">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Checkout</p>
+      <h1>Confirming your payment</h1>
+      <p class="sub">Your card has been charged — we are waiting for Stripe to confirm the order.</p>
+    </div>
+  </div>
+
+  <ol class="steps" aria-label="Checkout progress" data-testid="checkout-steps">
+    <li class="step is-done"><span class="step-n">1</span>Review</li>
+    <li class="step is-done"><span class="step-n">2</span>Shipping</li>
+    <li class="step is-current" aria-current="step"><span class="step-n">3</span>Payment</li>
+  </ol>
+
+  @if (state() === 'confirming') {
+    <section class="card" data-testid="payment-confirming">
+      <div class="card-body center-block">
+        <span class="spinner" aria-hidden="true"></span>
+        <h2>Payment received — finalising your order</h2>
+        <p class="muted">
+          Stripe has taken payment successfully. We are now waiting for the confirmation event that creates
+          your order. This usually takes a few seconds; please keep this page open.
+        </p>
+
+        <div class="progress track" role="progressbar" [attr.aria-valuenow]="progressPct()" aria-valuemin="0" aria-valuemax="100">
+          <span [style.width.%]="progressPct()"></span>
+        </div>
+
+        <dl class="kv poll">
+          <dt>Stripe session</dt>
+          <dd class="sid" data-testid="payment-session-id">{{ sessionId() }}</dd>
+          <dt>Confirmation attempt</dt>
+          <dd data-testid="payment-attempt">{{ attempt() }} of {{ maxAttempts() }}</dd>
+          <dt>Next check in</dt>
+          <dd data-testid="payment-backoff">{{ delayMs() }} ms</dd>
+        </dl>
+
+        <p class="small muted">
+          Checks slow down progressively (exponential backoff) so we never hammer the payment service.
+        </p>
+      </div>
+    </section>
+  } @else {
+    <section class="card" data-testid="payment-timeout">
+      <div class="card-body center-block">
+        <div class="alert alert-warn" role="alert">
+          <span>
+            <strong>Your payment went through, but confirmation is taking longer than expected.</strong>
+            We stopped checking after {{ maxAttempts() }} attempts.
+          </span>
+        </div>
+        <h2>We could not confirm the order yet</h2>
+        <p class="muted">
+          You have <strong>not</strong> been charged twice, and no further action is needed to keep your payment.
+          Your order will appear under Orders as soon as the confirmation arrives. If it does not show within
+          15 minutes, contact us with the Stripe session reference below and we will finish it manually.
+        </p>
+
+        <dl class="kv poll">
+          <dt>Stripe session</dt>
+          <dd class="sid" data-testid="payment-timeout-session-id">{{ sessionId() }}</dd>
+          <dt>Attempts made</dt>
+          <dd>{{ attempt() }}</dd>
+          <dt>Support</dt>
+          <dd class="sid">
+            <a class="link" [href]="'mailto:' + business().contactEmail">{{ business().contactEmail }}</a>
+          </dd>
+        </dl>
+
+        <div class="cta">
+          <button type="button" class="btn btn-primary btn-lg btn-block" (click)="retry()" data-testid="payment-retry-button">
+            Check again
+          </button>
+          <a class="btn btn-ghost btn-block" routerLink="/orders" data-testid="payment-orders-link">Go to my orders</a>
+        </div>
+        <p class="small muted">{{ business().supportHours }} · {{ business().contactPhone }}</p>
+      </div>
+    </section>
+  }
+
+  <section class="panel preview" data-testid="payment-preview-panel">
+    <p class="small"><strong>Preview controls</strong> — mockup only, not part of the customer flow.</p>
+    <button type="button" class="btn btn-ghost btn-sm" (click)="toggleSimulate()" data-testid="payment-preview-no-webhook">
+      Preview: simulate webhook never arrives{{ simulateNoWebhook() ? ' (on)' : '' }}
+    </button>
+  </section>
+</div>

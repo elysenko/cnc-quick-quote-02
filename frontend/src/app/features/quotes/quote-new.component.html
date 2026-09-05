@@ -1,0 +1,36 @@
+<div class="page" data-testid="quote-wizard">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">New quote</p>
+      <h1>{{ steps[stepIndex()].caption }}</h1>
+      <p class="sub">Step {{ stepIndex() + 1 }} of {{ steps.length }} — nothing is charged until you check out.</p>
+    </div>
+    <a class="btn btn-quiet btn-sm" routerLink="/quotes" data-testid="wizard-cancel">Save &amp; exit</a>
+  </div>
+
+  <ol class="stepper" data-testid="wizard-stepper">
+    @for (step of steps; track step.key; let i = $index) {
+      <li [class.current]="step.key === this.step()" [class.done]="isDone(i)">
+        <a [routerLink]="stepLink(step.key)" [queryParams]="snapshotParams()"
+           [attr.data-testid]="'wizard-step-' + step.key">
+          <span class="pip">{{ isDone(i) ? '✓' : i + 1 }}</span>
+          <span class="pip-label">{{ step.label }}</span>
+        </a>
+      </li>
+    }
+  </ol>
+
+  <router-outlet />
+
+  <div class="wizard-foot" data-testid="wizard-footer">
+    <button type="button" class="btn btn-ghost" [disabled]="stepIndex() === 0"
+            (click)="go(-1)" data-testid="wizard-back">Back</button>
+    <div class="foot-msg small muted">{{ blockedReason() }}</div>
+    @if (step() !== 'review') {
+      <button type="button" class="btn btn-primary" [disabled]="!canAdvance()"
+              (click)="go(1)" data-testid="wizard-next">
+        Continue
+      </button>
+    }
+  </div>
+</div>

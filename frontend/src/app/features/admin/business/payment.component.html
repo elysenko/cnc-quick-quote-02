@@ -1,0 +1,128 @@
+<div class="page" data-testid="admin-payment-page">
+  <div class="page-head">
+    <div>
+      <h1>Payment</h1>
+      <p class="sub">
+        Stripe credentials for hosted checkout. Secrets are write-only — they are stored once and
+        never shown again.
+      </p>
+    </div>
+    <div class="row">
+      <button type="button" class="btn btn-ghost" (click)="revert()" data-testid="payment-revert-button">Revert</button>
+      <button type="submit" form="payment-form" class="btn btn-primary" data-testid="payment-save-button">Save keys</button>
+    </div>
+  </div>
+
+  @if (saved()) {
+    <div class="alert alert-ok" role="status" data-testid="payment-saved-banner">{{ savedNote() }}</div>
+  }
+
+  @if (!checkoutReady()) {
+    <div class="alert alert-info" data-testid="payment-checkout-warning">
+      Until a publishable key and a secret key are stored, customers can still upload drawings and
+      get quotes, but <strong>checkout is disabled</strong> — they are shown the “contact the
+      company” message instead.
+    </div>
+  }
+
+  <div class="split">
+    <div class="card">
+      <div class="card-head"><h2>Stripe API keys</h2></div>
+      <form id="payment-form" class="card-body" [formGroup]="form" (ngSubmit)="save()" novalidate data-testid="payment-form">
+        <div class="field">
+          <label for="p-pub">Publishable key</label>
+          <input id="p-pub" type="text" class="mono" formControlName="publishableKey" autocomplete="off" spellcheck="false"
+            placeholder="pk_live_…"
+            [class.invalid]="form.controls.publishableKey.touched && form.controls.publishableKey.invalid"
+            data-testid="payment-publishable-input" />
+          @if (form.controls.publishableKey.touched && form.controls.publishableKey.invalid) {
+            <p class="field-error" data-testid="payment-publishable-error">
+              Enter the full publishable key — it starts with <span class="mono">pk_</span>.
+            </p>
+          } @else {
+            <p class="hint">Public by design: it ships in the browser bundle, so it is shown in full.</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="p-secret">Secret key</label>
+          <p class="stored mono" data-testid="payment-secret-stored">
+            Stored: ••••{{ business().stripeSecretLast4 }}
+          </p>
+          <input id="p-secret" type="password" class="mono" formControlName="secretKey" autocomplete="new-password"
+            placeholder="Leave blank to keep the current key"
+            [class.invalid]="form.controls.secretKey.touched && form.controls.secretKey.invalid"
+            data-testid="payment-secret-input" />
+          @if (form.controls.secretKey.hasError('short')) {
+            <p class="field-error" data-testid="payment-secret-error">That key looks too short.</p>
+          } @else if (form.controls.secretKey.hasError('prefix')) {
+            <p class="field-error" data-testid="payment-secret-error">
+              A Stripe secret key starts with <span class="mono">sk_</span>.
+            </p>
+          } @else {
+            <p class="hint">Leave blank to keep the stored secret. Server-side only — never sent to the browser.</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="p-webhook">Webhook signing secret</label>
+          <p class="stored mono" data-testid="payment-webhook-stored">
+            Stored: ••••{{ business().stripeWebhookLast4 }}
+          </p>
+          <input id="p-webhook" type="password" class="mono" formControlName="webhookSecret" autocomplete="new-password"
+            placeholder="Leave blank to keep the current key"
+            [class.invalid]="form.controls.webhookSecret.touched && form.controls.webhookSecret.invalid"
+            data-testid="payment-webhook-input" />
+          @if (form.controls.webhookSecret.hasError('short')) {
+            <p class="field-error" data-testid="payment-webhook-error">That signing secret looks too short.</p>
+          } @else if (form.controls.webhookSecret.hasError('prefix')) {
+            <p class="field-error" data-testid="payment-webhook-error">
+              A signing secret starts with <span class="mono">whsec_</span>.
+            </p>
+          } @else {
+            <p class="hint">Leave blank to keep the stored secret. Verifies checkout.session.completed events.</p>
+          }
+        </div>
+      </form>
+      <div class="card-foot">
+        <button type="submit" form="payment-form" class="btn btn-primary" data-testid="payment-save-button-foot">
+          Save keys
+        </button>
+      </div>
+    </div>
+
+    <aside class="panel" data-testid="payment-status-panel">
+      <p class="eyebrow">Status</p>
+      <ul class="status-list">
+        <li class="row-between">
+          <span>Publishable key</span>
+          <span class="badge" [class.badge-ok]="business().stripePublishableKey.length > 0" [class.badge-warn]="business().stripePublishableKey.length === 0">
+            {{ business().stripePublishableKey.length > 0 ? 'Set' : 'Missing' }}
+          </span>
+        </li>
+        <li class="row-between">
+          <span>Secret key</span>
+          <span class="badge" [class.badge-ok]="business().stripeSecretLast4.length > 0" [class.badge-warn]="business().stripeSecretLast4.length === 0">
+            {{ business().stripeSecretLast4.length > 0 ? 'Stored ••••' + business().stripeSecretLast4 : 'Missing' }}
+          </span>
+        </li>
+        <li class="row-between">
+          <span>Webhook secret</span>
+          <span class="badge" [class.badge-ok]="webhookReady()" [class.badge-warn]="!webhookReady()">
+            {{ webhookReady() ? 'Stored ••••' + business().stripeWebhookLast4 : 'Missing' }}
+          </span>
+        </li>
+        <li class="row-between">
+          <span>Checkout</span>
+          <span class="badge" [class.badge-ok]="checkoutReady()" [class.badge-warn]="!checkoutReady()">
+            {{ checkoutReady() ? 'Enabled' : 'Blocked' }}
+          </span>
+        </li>
+      </ul>
+      <div class="alert alert-warn note">
+        Blank means “keep what is stored”. To remove a key entirely, rotate it in the Stripe
+        dashboard and paste the replacement here.
+      </div>
+    </aside>
+  </div>
+</div>

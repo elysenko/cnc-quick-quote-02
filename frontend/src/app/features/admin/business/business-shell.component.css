@@ -1,0 +1,3 @@
+:host { display: block; }
+.page { padding-bottom: var(--s-4); }
+.tabs { margin-bottom: var(--s-5); }

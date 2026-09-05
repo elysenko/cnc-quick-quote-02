@@ -1,0 +1,19 @@
+.identity { display: flex; align-items: center; gap: var(--s-4); margin-bottom: var(--s-4); }
+.avatar {
+  display: grid; place-items: center; flex: none; width: 56px; height: 56px; border-radius: 50%;
+  background: var(--primary-soft); color: var(--primary);
+  border: 1px solid var(--primary-border); font-weight: 700; font-size: var(--fs-md);
+}
+.identity-text { min-width: 0; }
+.name { margin: 0; font-size: var(--fs-md); font-weight: 700; overflow-wrap: anywhere; }
+.email { margin: 0 0 var(--s-2); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.facts { padding-top: var(--s-3); border-top: 1px solid var(--border); }
+.facts dd.plain { font-family: var(--font); text-align: right; }
+
+.addr { display: flex; flex-direction: column; gap: 2px; font-style: normal; }
+.note { margin: var(--s-3) 0 0; }
+
+.links { display: flex; flex-direction: column; gap: var(--s-2); }
+.preview { border-style: dashed; }
+.preview-title { margin-bottom: var(--s-2); font-size: var(--fs-base); }
+.preview .row { margin-top: var(--s-3); }

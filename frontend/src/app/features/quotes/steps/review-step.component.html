@@ -1,0 +1,95 @@
+<div class="split" data-testid="review-step">
+  <div class="stack">
+    @if (assumed()) {
+      <div class="alert alert-info" data-testid="review-assumed-notice">
+        Showing your most recent drawing and material.
+        <a class="link" routerLink="/quotes/new/upload">Start from the upload step</a> to change them.
+      </div>
+    }
+    @if (error()) {
+      <div class="alert alert-error" data-testid="review-error">{{ error() }}</div>
+    }
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Nested sheet preview</h2>
+        @if (sheetNumbers().length > 1) {
+          <div class="chip-row" data-testid="sheet-switcher">
+            @for (n of sheetNumbers(); track n) {
+              <button type="button" class="chip" [class.active]="n === sheetIndex()" (click)="showSheet(n)"
+                      [attr.data-testid]="'sheet-tab-' + n">Sheet {{ n }}</button>
+            }
+          </div>
+        }
+      </div>
+      <div data-testid="nested-preview">
+        <app-workbed-canvas
+          [paths]="drawing()?.paths ?? []"
+          [placements]="nested()?.placements ?? []"
+          [bends]="bends()"
+          [sheetWidthMm]="material().sheetWidthMm"
+          [sheetHeightMm]="material().sheetHeightMm"
+          [sheetIndex]="sheetIndex()"
+          [autoStart]="true"
+        />
+      </div>
+      <div class="card-body">
+        <div class="review-metrics">
+          <div class="metric"><div class="v" data-testid="review-sheets">{{ nested()?.sheets }}</div><div class="k">Sheets</div></div>
+          <div class="metric"><div class="v">{{ nested()?.perSheet }}</div><div class="k">Parts per sheet</div></div>
+          <div class="metric"><div class="v" data-testid="review-utilisation">{{ ((nested()?.utilization ?? 0) * 100).toFixed(1) }}%</div><div class="k">Utilisation</div></div>
+          <div class="metric"><div class="v">{{ bends().length }}</div><div class="k">Bends</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h3>What you are ordering</h3></div>
+      <div class="card-body">
+        <dl class="kv">
+          <dt>Drawing</dt><dd class="mono">{{ drawing()?.filename }}</dd>
+          <dt>Material</dt><dd>{{ material().name }}</dd>
+          <dt>Quantity</dt><dd>{{ quantity() }}</dd>
+          <dt>Cut length (total)</dt><dd>{{ ((drawing()?.cutLengthMm ?? 0) * quantity()).toFixed(0) }} mm</dd>
+          <dt>Part size</dt><dd>{{ drawing()?.bboxWMm }} × {{ drawing()?.bboxHMm }} mm</dd>
+        </dl>
+      </div>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="card sticky-summary">
+      <div class="card-head"><h3>Price breakdown</h3></div>
+      <div class="card-body">
+        @if (priced(); as p) {
+          <div data-testid="price-breakdown">
+            @for (line of p.breakdown; track line.label) {
+              <div class="line">
+                <span>{{ line.label }}<br /><span class="muted small">{{ line.detail }}</span></span>
+                <span class="amt">{{ money(line.amountCents) }}</span>
+              </div>
+            }
+            <div class="line line-total">
+              <span>Quote total</span>
+              <span class="amt" data-testid="review-total">{{ money(p.total) }}</span>
+            </div>
+          </div>
+          <p class="hint">
+            Issuing locks this price to the quote. Later price changes by the workshop will not
+            affect it.
+          </p>
+        } @else {
+          <div class="empty"><p class="muted small">Complete the earlier steps to see pricing.</p></div>
+        }
+      </div>
+      <div class="card-foot">
+        <button type="button" class="btn btn-quiet btn-sm" (click)="simulateRateLimit()"
+                data-testid="simulate-rate-limit">Preview: rate limit</button>
+        <button type="button" class="btn btn-primary btn-lg" [disabled]="issuing()"
+                (click)="issue()" data-testid="issue-quote-button">
+          {{ issuing() ? 'Issuing…' : 'Issue quote' }}
+        </button>
+      </div>
+    </section>
+  </div>
+</div>

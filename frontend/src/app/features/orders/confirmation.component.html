@@ -1,0 +1,134 @@
+<div class="page" data-testid="order-confirmation">
+  @if (order(); as o) {
+    <header class="page-head hero card" data-testid="confirmation-hero">
+      <span class="check" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </span>
+      <h1>Order confirmed</h1>
+      <p class="sub">
+        Thank you — {{ business().companyName }} has your payment and your job is queued for production.
+      </p>
+
+      <div class="refs">
+        <div class="ref">
+          <span class="ref-label">Order number</span>
+          <span class="ref-value mono" data-testid="order-number">{{ o.orderNumber }}</span>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="copy('order', o.orderNumber)"
+                  data-testid="copy-order-number">
+            {{ copied() === 'order' ? 'Copied' : 'Copy' }}
+          </button>
+        </div>
+        <div class="ref">
+          <span class="ref-label">Confirmation number</span>
+          <span class="ref-value mono" data-testid="confirmation-number">{{ o.confirmationNumber }}</span>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="copy('confirmation', o.confirmationNumber)"
+                  data-testid="copy-confirmation-number">
+            {{ copied() === 'confirmation' ? 'Copied' : 'Copy' }}
+          </button>
+        </div>
+      </div>
+      <p class="small muted placed">Placed {{ o.placedAt | date: 'd MMM y, HH:mm' }} · Quote {{ o.quoteReference }}</p>
+    </header>
+
+    <div class="alert alert-info emailed" data-testid="confirmation-email-note">
+      <span>
+        A confirmation email is on its way to <strong>{{ user()?.email || 'your account email' }}</strong>.
+        If the email fails to send it never affects your order — these reference numbers are the record of purchase.
+      </span>
+    </div>
+
+    <div class="split">
+      <div class="stack">
+        <section class="card">
+          <div class="card-head">
+            <h2>Order summary</h2>
+            <span [class]="'badge ' + statusClass(o.status)">{{ statusLabel(o.status) }}</span>
+          </div>
+          <div class="card-body">
+            <div class="line">
+              <span>
+                <strong>{{ o.materialName }}</strong>
+                <span class="muted small block">{{ o.quantity }} parts · {{ o.sheetCount }} sheet(s)</span>
+              </span>
+              <span class="amt">{{ money(o.subtotalCents) }}</span>
+            </div>
+            <div class="line">
+              <span>
+                <strong>{{ o.shippingMethodName }}</strong>
+                <span class="muted small block">Delivery</span>
+              </span>
+              <span class="amt" data-testid="confirmation-shipping-cost">{{ money(o.shippingCostCents) }}</span>
+            </div>
+            <div class="line line-total">
+              <span>Total paid</span>
+              <span class="amt" data-testid="confirmation-total">{{ money(o.totalCents) }}</span>
+            </div>
+            <p class="small muted note">Paid by card via Stripe · session {{ o.stripeSessionId }}</p>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Delivery</h2></div>
+          <div class="card-body">
+            <address class="addr" data-testid="confirmation-address">
+              <strong>{{ o.shippingAddress.fullName }}</strong>
+              @if (o.shippingAddress.company) { <span>{{ o.shippingAddress.company }}</span> }
+              <span>{{ o.shippingAddress.line1 }}</span>
+              @if (o.shippingAddress.line2) { <span>{{ o.shippingAddress.line2 }}</span> }
+              <span>{{ o.shippingAddress.city }}, {{ o.shippingAddress.region }}</span>
+              <span>{{ o.shippingAddress.postcode }}</span>
+              <span>{{ o.shippingAddress.country }}</span>
+              <span class="muted small">{{ o.shippingAddress.phone }}</span>
+            </address>
+            @if (expectedDelivery(); as eta) {
+              <p class="eta" data-testid="confirmation-eta">
+                <span class="muted small block">Expected delivery</span>
+                <strong>{{ eta | date: 'EEEE d MMMM y' }}</strong>
+              </p>
+            }
+          </div>
+        </section>
+      </div>
+
+      <aside class="side">
+        <div class="card">
+          <div class="card-head"><h2>What happens next</h2></div>
+          <div class="card-body">
+            <ol class="next">
+              <li><strong>Nesting &amp; cutting</strong><span class="muted small block">Your sheets are scheduled on the laser.</span></li>
+              <li><strong>Deburr &amp; bend</strong><span class="muted small block">Parts are finished and checked.</span></li>
+              <li><strong>Dispatch</strong><span class="muted small block">You get tracking by email on the day it ships.</span></li>
+            </ol>
+          </div>
+          <div class="card-foot links">
+            <button type="button" class="btn btn-ghost btn-block" data-testid="download-receipt-button">
+              Download receipt (PDF)
+            </button>
+            <a class="btn btn-primary btn-block" routerLink="/orders" data-testid="confirmation-orders-link">
+              View all orders
+            </a>
+            <a class="btn btn-quiet btn-block" routerLink="/quotes/new/upload" data-testid="confirmation-new-quote-link">
+              Start another quote
+            </a>
+          </div>
+        </div>
+        <p class="small muted help">
+          Questions about this order? Email
+          <a class="link" [href]="'mailto:' + business().contactEmail">{{ business().contactEmail }}</a>
+          quoting {{ o.orderNumber }}. {{ business().supportHours }}.
+        </p>
+      </aside>
+    </div>
+  } @else {
+    <div class="card" data-testid="confirmation-not-found">
+      <div class="card-body empty">
+        <h3>Order not found</h3>
+        <p class="muted">We could not find that order on your account.</p>
+        <a class="btn btn-primary" routerLink="/orders">Back to my orders</a>
+      </div>
+    </div>
+  }
+</div>

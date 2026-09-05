@@ -1,0 +1,108 @@
+<div class="page" data-testid="checkout-review">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Checkout</p>
+      <h1>Review your order</h1>
+      <p class="sub">Confirm the job details and pricing before choosing how it ships.</p>
+    </div>
+    <a class="btn btn-quiet btn-sm" routerLink="/quotes" data-testid="review-back-link">Back to quotes</a>
+  </div>
+
+  <ol class="steps" aria-label="Checkout progress" data-testid="checkout-steps">
+    <li class="step is-current" aria-current="step"><span class="step-n">1</span>Review</li>
+    <li class="step"><span class="step-n">2</span>Shipping</li>
+    <li class="step"><span class="step-n">3</span>Payment</li>
+  </ol>
+
+  @if (quote(); as q) {
+    <div class="split">
+      <div class="stack">
+        <section class="card" data-testid="review-summary-card">
+          <div class="card-head">
+            <h2>Order summary</h2>
+            <span class="badge badge-neutral mono">{{ q.reference }}</span>
+          </div>
+          <div class="card-body">
+            <dl class="kv specs">
+              <dt>Drawing</dt>
+              <dd class="wrap" data-testid="review-drawing">{{ q.drawingName }}</dd>
+              <dt>Material</dt>
+              <dd class="wrap" data-testid="review-material">{{ q.materialName }}</dd>
+              <dt>Quantity</dt>
+              <dd data-testid="review-quantity">{{ q.quantity }} parts</dd>
+              <dt>Sheets required</dt>
+              <dd data-testid="review-sheets">{{ q.sheetCount }}</dd>
+              <dt>Sheet utilisation</dt>
+              <dd data-testid="review-utilisation">{{ q.utilization * 100 | number: '1.1-1' }}%</dd>
+              <dt>Bends</dt>
+              <dd data-testid="review-bends">{{ q.bendCount }}</dd>
+            </dl>
+            <div class="util">
+              <div class="progress" role="img" [attr.aria-label]="'Sheet utilisation ' + (q.utilization * 100 | number: '1.0-0') + ' percent'">
+                <span [style.width.%]="q.utilization * 100"></span>
+              </div>
+              <p class="small muted util-note">
+                {{ q.perSheet }} parts nest per sheet across {{ q.sheetCount }} sheet(s).
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" data-testid="review-breakdown-card">
+          <div class="card-head"><h2>Price breakdown</h2></div>
+          <div class="card-body">
+            @for (item of q.breakdown; track item.label) {
+              <div class="line" [attr.data-testid]="'review-line-' + $index">
+                <span class="line-label">
+                  <strong>{{ item.label }}</strong>
+                  <span class="muted small">{{ item.detail }}</span>
+                </span>
+                <span class="amt">{{ money(item.amountCents) }}</span>
+              </div>
+            }
+            <div class="line line-total">
+              <span>Quote total</span>
+              <span class="amt" data-testid="review-total">{{ money(q.totalCents) }}</span>
+            </div>
+            <p class="small muted note">
+              Shipping is calculated on the next step. Any applicable tax is shown by Stripe at payment.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <aside class="summary">
+        <div class="card">
+          <div class="card-head"><h2>Total so far</h2></div>
+          <div class="card-body">
+            <p class="grand mono" data-testid="review-grand-total">{{ money(q.totalCents) }}</p>
+            <div class="line">
+              <span>Parts &amp; processing</span><span class="amt">{{ money(q.totalCents) }}</span>
+            </div>
+            <div class="line">
+              <span>Shipping</span><span class="amt muted">Next step</span>
+            </div>
+            <p class="small muted note">Quoted prices hold for 30 days from {{ q.reference }}.</p>
+          </div>
+          <div class="card-foot actions">
+            <a
+              class="btn btn-primary btn-lg btn-block"
+              [routerLink]="['/checkout', q.id, 'shipping']"
+              data-testid="checkout-continue-button"
+            >
+              Continue to shipping
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  } @else {
+    <div class="card" data-testid="review-not-found">
+      <div class="card-body empty">
+        <h3>Quote not found</h3>
+        <p class="muted">That quote no longer exists, or it belongs to another account.</p>
+        <a class="btn btn-primary" routerLink="/quotes" data-testid="review-empty-quotes-link">Back to my quotes</a>
+      </div>
+    </div>
+  }
+</div>

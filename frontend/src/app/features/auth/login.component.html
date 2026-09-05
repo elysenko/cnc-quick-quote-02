@@ -1,0 +1,90 @@
+<div class="auth" data-testid="login-page">
+  <section class="auth-aside">
+    <div class="aside-inner">
+      <p class="eyebrow on-dark">{{ business().companyName }}</p>
+      <h1>Instant quotes for laser-cut sheet metal.</h1>
+      <p class="lede">
+        Upload a DXF, add your bend lines, choose a material — see the nested sheet, the cut path
+        and the price before you commit.
+      </p>
+      <ul class="points">
+        <li><span class="tick"></span>Geometry parsed from your drawing in seconds</li>
+        <li><span class="tick"></span>Itemised pricing, locked to the quote you were given</li>
+        <li><span class="tick"></span>Card checkout with tracked order confirmation</li>
+      </ul>
+      <div class="bed-art" aria-hidden="true">
+        <svg viewBox="0 0 320 150" width="100%" height="100%">
+          <rect x="0" y="0" width="320" height="150" rx="8" class="art-bed" />
+          <rect x="16" y="14" width="288" height="122" rx="4" class="art-sheet" />
+          @for (p of art; track p.x) {
+            <rect [attr.x]="p.x" [attr.y]="p.y" width="52" height="34" rx="6" class="art-part" />
+          }
+          <line x1="16" y1="86" x2="304" y2="86" class="art-bend" />
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="auth-main">
+    <div class="auth-card">
+      <h2>Sign in</h2>
+      <p class="muted small">Access your quotes, drawings and orders.</p>
+
+      @if (returnUrl) {
+        <div class="alert alert-info" data-testid="login-return-notice">
+          Sign in to continue to <span class="mono">{{ returnUrl }}</span>
+        </div>
+      }
+      @if (error()) {
+        <div class="alert alert-error" data-testid="login-error">{{ error() }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate data-testid="login-form">
+        <div class="field">
+          <label for="login-email">Email address</label>
+          <input
+            id="login-email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            placeholder="you@company.com"
+            [class.invalid]="invalid('email')"
+            data-testid="login-email"
+          />
+          @if (invalid('email')) {
+            <span class="field-error" data-testid="login-email-error">Enter a valid email address.</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input
+            id="login-password"
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+            [class.invalid]="invalid('password')"
+            data-testid="login-password"
+          />
+          @if (invalid('password')) {
+            <span class="field-error">Enter your password.</span>
+          }
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" [disabled]="pending()" data-testid="login-submit">
+          {{ pending() ? 'Signing in…' : 'Sign in' }}
+        </button>
+      </form>
+
+      @if (previewShortcut) {
+        <button type="button" class="btn btn-quiet btn-block skip" (click)="skipLogin()" data-testid="login-skip">
+          {{ previewShortcut }}
+        </button>
+      }
+
+      <p class="switch small">
+        New here? <a routerLink="/signup" class="link" data-testid="login-to-signup">Create an account</a>
+      </p>
+    </div>
+  </section>
+</div>

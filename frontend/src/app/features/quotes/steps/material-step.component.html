@@ -1,0 +1,99 @@
+<div class="split" data-testid="material-step">
+  <div class="stack">
+    <section class="card">
+      <div class="card-head">
+        <h2>Choose a material</h2>
+        <span class="badge badge-neutral">{{ materials().length }} available</span>
+      </div>
+      <div class="card-body">
+        @if (serverError()) {
+          <div class="alert alert-error" data-testid="material-server-error">{{ serverError() }}</div>
+        }
+        <p class="muted small">
+          Only materials the workshop currently stocks are listed. Sheet size drives how many parts
+          nest per sheet.
+        </p>
+        <ul class="mat-list" data-testid="material-select" role="radiogroup" aria-label="Material">
+          @for (m of materials(); track m.id) {
+            <li>
+              <button type="button" class="mat-row" [class.picked]="m.id === params().materialId"
+                      role="radio" [attr.aria-checked]="m.id === params().materialId"
+                      (click)="pick(m)" [attr.data-testid]="'material-option-' + m.id">
+                <span class="swatch" aria-hidden="true"></span>
+                <span class="mat-meta">
+                  <strong>{{ m.name }}</strong>
+                  <span class="muted small">
+                    {{ m.thicknessMm }} mm · sheet {{ m.sheetWidthMm }} × {{ m.sheetHeightMm }} mm ·
+                    ×{{ m.costMultiplier }} cost
+                  </span>
+                </span>
+                @if (m.id === params().materialId) {
+                  <span class="badge badge-info">Selected</span>
+                }
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h3>Quantity</h3></div>
+      <div class="card-body">
+        <div class="qty-row">
+          <div class="field">
+            <label for="quantity-input">How many parts?</label>
+            <input id="quantity-input" type="number" inputmode="numeric" min="1"
+                   [value]="params().qty || ''" (input)="onQuantity($event)"
+                   [class.invalid]="!!quantityError()" data-testid="quantity-input" />
+          </div>
+          <div class="qty-presets">
+            @for (preset of [1, 10, 25, 100]; track preset) {
+              <button type="button" class="chip" [class.active]="params().qty === preset"
+                      (click)="setQuantity(preset)" [attr.data-testid]="'qty-preset-' + preset">
+                {{ preset }}
+              </button>
+            }
+          </div>
+        </div>
+        @if (quantityError()) {
+          <p class="field-error" data-testid="quantity-error">{{ quantityError() }}</p>
+        } @else {
+          <p class="hint">Between {{ pricing().qtyMin }} and {{ pricing().qtyMax }} parts per quote.</p>
+        }
+        <button type="button" class="btn btn-quiet btn-sm preview-tool" (click)="simulateDeactivated()"
+                data-testid="simulate-material-422">
+          Preview: simulate the material being deactivated mid-quote
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="card">
+      <div class="card-head"><h3>Live estimate</h3></div>
+      <div class="card-body">
+        @if (estimate(); as est) {
+          <div class="review-metrics">
+            <div class="metric"><div class="v">{{ est.sheets }}</div><div class="k">Sheets</div></div>
+            <div class="metric"><div class="v">{{ est.perSheet }}</div><div class="k">Per sheet</div></div>
+            <div class="metric"><div class="v">{{ (est.utilization * 100).toFixed(1) }}%</div><div class="k">Utilisation</div></div>
+          </div>
+          <div class="lines">
+            @for (line of est.breakdown; track line.label) {
+              <div class="line"><span>{{ line.label }}</span><span class="amt">{{ money(line.amountCents) }}</span></div>
+            }
+            <div class="line line-total"><span>Estimated total</span>
+              <span class="amt" data-testid="estimate-total">{{ money(est.total) }}</span></div>
+          </div>
+          <p class="hint">Final pricing is confirmed on the review step before you issue the quote.</p>
+        } @else {
+          <div class="empty">
+            <h3>Pick a material</h3>
+            <p class="muted small">Choose a material and quantity and the nesting and price update here instantly.</p>
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+</div>

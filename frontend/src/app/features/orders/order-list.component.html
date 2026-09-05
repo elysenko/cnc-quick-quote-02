@@ -1,0 +1,96 @@
+<div class="page" data-testid="order-list">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Orders</p>
+      <h1>Your orders</h1>
+      <p class="sub">Every paid job, with its production status and confirmation details.</p>
+    </div>
+    <a class="btn btn-primary" routerLink="/quotes/new/upload" data-testid="orders-new-quote-button">New quote</a>
+  </div>
+
+  <div class="chip-row filters" role="group" aria-label="Filter orders by status" data-testid="order-status-filters">
+    @for (f of filters; track f.id) {
+      <a
+        class="chip"
+        [class.active]="activeStatus() === f.id"
+        routerLink="/orders"
+        [queryParams]="{ status: f.id === 'all' ? null : f.id }"
+        [attr.aria-current]="activeStatus() === f.id ? 'true' : null"
+        [attr.data-testid]="'order-filter-' + f.id"
+      >
+        {{ f.label }}<span class="count">{{ countFor(f.id) }}</span>
+      </a>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="card" data-testid="order-list-loading" aria-busy="true">
+      <div class="card-body skeletons">
+        @for (row of skeletonRows; track row) {
+          <div class="sk-row">
+            <span class="skeleton sk-a"></span>
+            <span class="skeleton sk-b"></span>
+            <span class="skeleton sk-c"></span>
+          </div>
+        }
+        <span class="visually-hidden">Loading your orders…</span>
+      </div>
+    </div>
+  } @else if (visibleOrders().length) {
+    <div class="card">
+      <div class="table-wrap">
+        <table class="data responsive">
+          <thead>
+            <tr>
+              <th scope="col">Order</th>
+              <th scope="col">Placed</th>
+              <th scope="col">Material</th>
+              <th scope="col">Qty</th>
+              <th scope="col">Total</th>
+              <th scope="col">Status</th>
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (o of visibleOrders(); track o.id) {
+              <tr [attr.data-testid]="'order-row-' + o.id">
+                <td data-label="Order">
+                  <a class="link mono" [routerLink]="['/orders', o.id, 'confirmation']" [attr.data-testid]="'order-link-' + o.id">
+                    {{ o.orderNumber }}
+                  </a>
+                  <span class="muted small block">Quote {{ o.quoteReference }}</span>
+                </td>
+                <td data-label="Placed">{{ o.placedAt | date: 'd MMM y' }}</td>
+                <td data-label="Material">{{ o.materialName }}</td>
+                <td data-label="Qty" class="mono">{{ o.quantity }}</td>
+                <td data-label="Total" class="mono strong">{{ money(o.totalCents) }}</td>
+                <td data-label="Status">
+                  <span [class]="'badge ' + statusClass(o.status)">{{ statusLabel(o.status) }}</span>
+                </td>
+                <td data-label="" class="right">
+                  <a class="btn btn-ghost btn-sm" [routerLink]="['/orders', o.id, 'confirmation']">View details</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @else if (orders().length) {
+    <div class="card" data-testid="order-list-filtered-empty">
+      <div class="card-body empty">
+        <h3>No {{ activeStatus() === 'in_production' ? 'in production' : activeStatus() }} orders</h3>
+        <p class="muted">Nothing matches this filter yet.</p>
+        <a class="btn btn-ghost" routerLink="/orders" data-testid="order-filter-clear">Show all orders</a>
+      </div>
+    </div>
+  } @else {
+    <div class="card" data-testid="order-list-empty">
+      <div class="card-body empty">
+        <h3>No orders yet</h3>
+        <p class="muted">Upload a DXF drawing to get an instant price — orders appear here once paid.</p>
+        <a class="btn btn-primary btn-lg" routerLink="/quotes/new/upload" data-testid="orders-empty-cta">Start a quote</a>
+      </div>
+    </div>
+  }
+</div>

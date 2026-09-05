@@ -1,0 +1,10 @@
+:host { display: block; }
+.editor-wrap { position: relative; width: 100%; height: 420px; border-radius: var(--r); overflow: hidden; background: var(--bed); }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: default; }
+canvas.drawing { cursor: crosshair; }
+.hint-bar {
+  position: absolute; left: var(--s-3); right: var(--s-3); bottom: var(--s-3); margin: 0;
+  padding: var(--s-2) var(--s-3); border-radius: var(--r-sm);
+  background: var(--bed-grid); color: var(--sheet); font-size: var(--fs-xs);
+}
+@media (max-width: 768px) { .editor-wrap { height: 320px; } }

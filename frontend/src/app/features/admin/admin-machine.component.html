@@ -1,0 +1,163 @@
+<div class="page" data-testid="admin-machine-page">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Machine &amp; upload settings</h1>
+      <p class="sub">
+        Nesting clearances, accepted CAD files and work-bed playback speed for the quote engine.
+      </p>
+    </div>
+    <div class="row">
+      <button type="button" class="btn btn-ghost" (click)="revert()" data-testid="machine-revert-button">Revert</button>
+      <button type="submit" form="admin-machine-form" class="btn btn-primary" data-testid="machine-save-button">
+        Save settings
+      </button>
+    </div>
+  </div>
+
+  @if (saved()) {
+    <div class="alert alert-ok" role="status" data-testid="machine-saved-banner">
+      Saved — new uploads and nesting runs use these limits.
+    </div>
+  }
+  @if (saveError()) {
+    <div class="alert alert-error" role="alert" data-testid="machine-error">{{ saveError() }}</div>
+  }
+
+  <div class="split">
+    <div class="card">
+      <div class="card-head"><h2>Machine limits</h2></div>
+      <form
+        id="admin-machine-form"
+        class="card-body"
+        [formGroup]="form"
+        (ngSubmit)="save()"
+        novalidate
+        data-testid="admin-machine-form"
+      >
+        <div class="form-grid">
+          <div class="field">
+            <label for="m-spacing">Part spacing (mm)</label>
+            <input id="m-spacing" type="number" step="0.5" min="0" formControlName="sheetSpacingMm"
+              [class.invalid]="form.controls.sheetSpacingMm.touched && form.controls.sheetSpacingMm.invalid"
+              data-testid="machine-spacing-input" />
+            @if (form.controls.sheetSpacingMm.touched && form.controls.sheetSpacingMm.invalid) {
+              <p class="field-error">Spacing must be between 0 and 100 mm.</p>
+            } @else {
+              <p class="hint">Gap kept between nested parts so cuts do not bleed into each other.</p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="m-margin">Sheet margin (mm)</label>
+            <input id="m-margin" type="number" step="0.5" min="0" formControlName="sheetMarginMm"
+              [class.invalid]="form.controls.sheetMarginMm.touched && form.controls.sheetMarginMm.invalid"
+              data-testid="machine-margin-input" />
+            @if (form.controls.sheetMarginMm.touched && form.controls.sheetMarginMm.invalid) {
+              <p class="field-error">Margin must be between 0 and 200 mm.</p>
+            } @else {
+              <p class="hint">
+                Clamp allowance at the sheet edge — usable area on a 1220 × 2440 sheet:
+                <strong>{{ usableArea().width }} × {{ usableArea().height }} mm</strong>.
+              </p>
+            }
+          </div>
+        </div>
+
+        <h3 class="section-title">Accepted uploads</h3>
+
+        <div class="field">
+          <span class="label" id="ext-label">Allowed file extensions</span>
+          <div class="chip-row" role="list" aria-labelledby="ext-label" data-testid="machine-extension-list">
+            @for (ext of extensions(); track ext) {
+              <span class="chip ext-chip" role="listitem" [attr.data-testid]="'extension-chip-' + ext">
+                <span class="mono">{{ ext }}</span>
+                <button type="button" class="chip-remove" (click)="removeExtension(ext)"
+                  [attr.aria-label]="'Remove ' + ext" [attr.data-testid]="'extension-remove-' + ext">×</button>
+              </span>
+            } @empty {
+              <p class="muted small" data-testid="machine-extension-empty">
+                No extensions allowed yet — every upload will be rejected until you add one.
+              </p>
+            }
+          </div>
+          <div class="row ext-add">
+            <input type="text" [formControl]="newExtension" placeholder=".dwg" autocomplete="off"
+              aria-label="New file extension" data-testid="machine-extension-input"
+              (keydown.enter)="$event.preventDefault(); addExtension()" />
+            <button type="button" class="btn btn-ghost" (click)="addExtension()" data-testid="machine-extension-add">
+              Add
+            </button>
+          </div>
+          @if (extError()) {
+            <p class="field-error" data-testid="machine-extension-error">{{ extError() }}</p>
+          } @else {
+            <p class="hint">Checked against the filename before the file is accepted.</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="m-upload">Maximum upload size (MB)</label>
+          <input id="m-upload" type="number" step="0.5" min="0.5" formControlName="maxUploadMb"
+            [class.invalid]="form.controls.maxUploadMb.touched && form.controls.maxUploadMb.invalid"
+            data-testid="machine-max-upload-input" />
+          @if (form.controls.maxUploadMb.touched && form.controls.maxUploadMb.invalid) {
+            <p class="field-error">Choose a limit between 0.5 MB and 200 MB.</p>
+          } @else {
+            <p class="hint">
+              Stored as <strong class="mono" data-testid="machine-bytes-hint">{{ bytesLabel() }} bytes</strong>.
+            </p>
+          }
+        </div>
+
+        <h3 class="section-title">Work bed playback</h3>
+
+        <div class="field">
+          <label for="m-speed">Animation speed</label>
+          <div class="row speed-row">
+            <input id="m-speed" type="range" min="0.25" max="3" step="0.25" formControlName="animationSpeed"
+              class="range" data-testid="machine-animation-speed-input" />
+            <output class="speed-value mono" for="m-speed" data-testid="machine-animation-speed-value">
+              {{ speedLabel() }}
+            </output>
+          </div>
+          <p class="hint">
+            Multiplier for the laser head animation on the quote work bed. 1.00× is real-time
+            playback; slower speeds help operators inspect the cut path.
+          </p>
+        </div>
+      </form>
+      <div class="card-foot">
+        <button type="submit" form="admin-machine-form" class="btn btn-primary" data-testid="machine-save-button-foot">
+          Save settings
+        </button>
+      </div>
+    </div>
+
+    <aside class="panel" data-testid="machine-info-panel">
+      <p class="eyebrow">How these limits are applied</p>
+      <h3>Enforced before storage</h3>
+      <p class="small">
+        Extension and size checks run on the upload request itself. A file that fails either check is
+        rejected with a validation message and <strong>never written to object storage</strong>, so
+        oversized or unsupported CAD files cannot accumulate.
+      </p>
+      <dl class="kv">
+        <dt>Accepted types</dt>
+        <dd class="mono">{{ extensions().length }}</dd>
+        <dt>Size ceiling</dt>
+        <dd class="mono">{{ draft().maxUploadMb }} MB</dd>
+        <dt>Part spacing</dt>
+        <dd class="mono">{{ draft().sheetSpacingMm }} mm</dd>
+        <dt>Sheet margin</dt>
+        <dd class="mono">{{ draft().sheetMarginMm }} mm</dd>
+        <dt>Playback</dt>
+        <dd class="mono">{{ speedLabel() }}</dd>
+      </dl>
+      <div class="alert alert-info note">
+        Spacing and margin feed the nesting pass, so changing them re-nests every new quote and can
+        change the sheet count a customer is charged for.
+      </div>
+    </aside>
+  </div>
+</div>

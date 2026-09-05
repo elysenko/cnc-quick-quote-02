@@ -1,0 +1,26 @@
+.toolbar { flex-wrap: wrap; row-gap: var(--s-2); }
+.filter-note { margin: 0; }
+.chip .count {
+  margin-left: var(--s-2);
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+.chip.active .count { background: var(--primary-strong); color: inherit; }
+
+.id-tag { display: block; }
+table.data td .actions { flex-wrap: nowrap; gap: var(--s-1); }
+table.data th.right { text-align: right; }
+
+.modal .card-head { position: sticky; top: 0; background: var(--surface); z-index: 1; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+.modal .card-foot { position: sticky; bottom: 0; }
+.modal .check { margin-top: var(--s-2); }
+.skeleton + .skeleton { width: 70%; }
+
+@media (max-width: 768px) {
+  .filter-note { display: none; }
+  table.data td .actions { flex-direction: column; align-items: stretch; }
+}
