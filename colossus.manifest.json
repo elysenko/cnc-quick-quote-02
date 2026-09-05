@@ -1,0 +1,13 @@
+{
+  "build": {
+    "dockerfile": "Dockerfile",
+    "method": "dockerfile",
+    "port": 80
+  },
+  "env": {
+    "required": []
+  },
+  "name": "cnc-quick-quote-02-staging",
+  "run": {},
+  "schemaVersion": 1
+}
