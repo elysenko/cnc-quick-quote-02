@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  /// bcryptjs hash (BCRYPT_ROUNDS in prisma/seed/seed.js and the auth service). Never store plaintext.
+  passwordHash String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+/// One value per role the stack contract declares (stacks/combos/enterprise.json auth.roles).
+/// Colossus mints one login per role; add app roles here AND to the contract, never demo users.
+enum Role {
+  USER
+  MANAGER
+  ADMIN
+}
+
+/// Platform-owned logins, materialized by prisma/seed/seed.js from COLOSSUS_ACCOUNTS_JSON.
+/// Native to every Colossus app: the accounts Colossus shows are exactly the rows here,
+/// and each one also exists as a User with the same bcrypt hash so it can log in.
+model ColossusAccount {
+  id           String   @id @default(uuid())
+  role         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  loginPath    String   @map("login_path")
+  createdBy    String   @default("colossus") @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("colossus_accounts")
+}

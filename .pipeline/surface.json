@@ -1,0 +1,23 @@
+{
+  "_generated": true,
+  "_scaffolded_at": "2026-09-05T21:50:56Z",
+  "fileBudget": { "maxLines": 400, "hardLimit": 500 },
+  "routes": [
+    { "method": "GET", "path": "/health" },
+    { "method": "GET", "path": "/trpc/users.findAll" },
+    { "method": "GET", "path": "/trpc/users.findById" }
+  ],
+  "components": [
+    { "selector": "app-root", "file": "frontend/src/app/app.component.ts", "maxLines": 400 },
+    { "selector": "app-home", "file": "frontend/src/app/home/home.component.ts", "maxLines": 400 }
+  ],
+  "testIds": [
+    { "id": "app-ready", "element": "div", "component": "app-root" },
+    { "id": "home-main", "element": "main", "component": "app-home" },
+    { "id": "home-title", "element": "h1", "component": "app-home" },
+    { "id": "users-loading", "element": "p", "component": "app-home" },
+    { "id": "users-error", "element": "p", "component": "app-home" },
+    { "id": "users-list", "element": "ul", "component": "app-home" },
+    { "id": "user-item-{id}", "element": "li", "component": "app-home" }
+  ]
+}

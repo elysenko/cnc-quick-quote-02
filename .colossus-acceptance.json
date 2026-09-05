@@ -1,0 +1,5 @@
+{
+  "ready_testid": "app-ready",
+  "expect_text": [],
+  "reject_signatures": ["home-title\">Users<", "Loading...", "Failed to load users."]
+}
