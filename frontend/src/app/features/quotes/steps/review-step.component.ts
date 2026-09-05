@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { money } from '../../../core/mock/fixtures';
+import { money } from '../../../core/format';
+import { QuoteApi } from '../../../core/api/domain.service';
 import { WorkbedCanvasComponent } from '../../../shared/workbed/workbed-canvas.component';
 import { QuoteDraftService, nest, priceQuote, readWizardParams } from '../wizard';
 
@@ -16,6 +17,7 @@ export class ReviewStepComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly draft = inject(QuoteDraftService);
+  private readonly quoteApi = inject(QuoteApi);
 
   readonly money = money;
   readonly queryParams = toSignal(this.route.queryParamMap, { initialValue: null });
@@ -25,13 +27,19 @@ export class ReviewStepComponent {
   readonly error = signal<string | null>(null);
   readonly sheetIndex = signal(1);
 
-  /** A deep link without a full selection still renders, using the account's latest drawing. */
+  constructor() {
+    void this.draft.ensureLoaded();
+    effect(() => {
+      const drawingId = this.params().drawingId;
+      if (drawingId) void this.draft.loadBends(drawingId);
+    });
+  }
+
+  /** True when the URL is missing part of the selection — the template explains it. */
   readonly assumed = computed(() => !this.params().drawingId || !this.params().materialId);
   readonly drawing = computed(() => this.draft.drawing(this.params().drawingId));
-  readonly material = computed(
-    () => this.draft.material(this.params().materialId) ?? this.draft.activeMaterials()[0],
-  );
-  readonly quantity = computed(() => this.params().qty || 10);
+  readonly material = computed(() => this.draft.material(this.params().materialId));
+  readonly quantity = computed(() => this.params().qty);
 
   readonly nested = computed(() => {
     const drawing = this.drawing();
@@ -71,16 +79,35 @@ export class ReviewStepComponent {
     this.sheetIndex.set(index);
   }
 
+  /**
+   * Preview-only affordance kept because the approved template references it. The
+   * real 429 (with the server's own Retry-After seconds) surfaces through issue().
+   */
   simulateRateLimit(): void {
+    if (!COLOSSUS_PREVIEW) return;
     this.error.set('Too many quotes in a short time. Please try again in 42 seconds.');
   }
 
-  issue(): void {
+  /**
+   * Issues the quote server-side and navigates to it. The server recomputes nesting
+   * and pricing from its own settings and freezes a pricing snapshot on the row —
+   * the estimate shown above is a preview, this response is the binding number.
+   */
+  async issue(): Promise<void> {
+    const { drawingId, materialId, qty } = this.params();
+    if (!drawingId || !materialId || qty < 1) {
+      this.error.set('Choose a drawing, a material and a quantity before issuing this quote.');
+      return;
+    }
     this.error.set(null);
     this.issuing.set(true);
-    setTimeout(() => {
+    try {
+      const quote = await this.quoteApi.create(drawingId, materialId, qty);
+      await this.router.navigate(['/quotes', quote.id]);
+    } catch (error) {
+      this.error.set((error as Error).message);
+    } finally {
       this.issuing.set(false);
-      void this.router.navigate(['/quotes', 'q_1042']);
-    }, 500);
+    }
   }
 }

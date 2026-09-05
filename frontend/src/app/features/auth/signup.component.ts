@@ -55,7 +55,11 @@ export class SignupComponent {
     const { name, email, password } = this.form.getRawValue();
     const result = await this.auth.signup(name, email, password);
     this.pending.set(false);
-    if (!result.ok) this.error.set(result.error ?? 'We could not create that account.');
+    if (!result.ok) {
+      // A 409 is specifically "that email is taken" — show it on the field itself.
+      if (result.field === 'email') this.emailError.set(result.error ?? null);
+      else this.error.set(result.error ?? 'We could not create your account. Please try again.');
+    }
   }
 
   skipSignup(): void {

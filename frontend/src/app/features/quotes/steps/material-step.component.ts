@@ -2,13 +2,16 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import type { Material } from '../../../core/models';
-import { money } from '../../../core/mock/fixtures';
+import { money } from '../../../core/format';
 import { QuoteDraftService, nest, priceQuote, readWizardParams } from '../wizard';
 
 @Component({
   selector: 'app-material-step',
   templateUrl: './material-step.component.html',
   styleUrl: './steps.css',
+  // Preview-only affordance in the design-owned template — hidden, not removed.
+  styles: [':host(.hide-preview-tools) .preview-tool { display: none; }'],
+  host: { '[class.hide-preview-tools]': '!isPreview' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MaterialStepComponent {
@@ -16,6 +19,7 @@ export class MaterialStepComponent {
   private readonly router = inject(Router);
   private readonly draft = inject(QuoteDraftService);
 
+  readonly isPreview = COLOSSUS_PREVIEW;
   readonly money = money;
   readonly materials = this.draft.activeMaterials;
   readonly pricing = this.draft.pricing;
@@ -24,6 +28,10 @@ export class MaterialStepComponent {
   readonly serverError = signal<string | null>(null);
 
   readonly drawing = computed(() => this.draft.drawing(this.params().drawingId));
+
+  constructor() {
+    void this.draft.ensureLoaded();
+  }
   readonly material = computed(() => this.materials().find((m) => m.id === this.params().materialId) ?? null);
 
   readonly quantityError = computed(() => {
@@ -73,7 +81,13 @@ export class MaterialStepComponent {
     this.patch({ qty: String(qty) });
   }
 
+  /**
+   * Preview-only affordance kept because the approved template references it. In a
+   * production build it does nothing — a genuinely deactivated material is rejected
+   * by the server with this same message when the quote is issued.
+   */
   simulateDeactivated(): void {
+    if (!COLOSSUS_PREVIEW) return;
     this.serverError.set(
       'That material was deactivated by the workshop while you were quoting. Choose another material to continue.',
     );

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import type { BendLine } from '../../../core/models';
@@ -21,6 +21,17 @@ export class BendsStepComponent {
   readonly params = computed(() => readWizardParams(this.queryParams()));
   readonly drawing = computed(() => this.draft.drawing(this.params().drawingId));
   readonly bends = this.draft.bends;
+  readonly saveError = signal<string | null>(null);
+
+  constructor() {
+    void this.draft.ensureLoaded();
+    // Bend lines are server-owned, so they reload whenever the selected drawing
+    // changes and survive a refresh mid-wizard.
+    effect(() => {
+      const drawingId = this.params().drawingId;
+      if (drawingId) void this.draft.loadBends(drawingId);
+    });
+  }
 
   readonly bendMode = signal(true);
   readonly selectedId = signal<string | null>(null);
@@ -54,7 +65,7 @@ export class BendsStepComponent {
   onMoved(move: { id: string; dx: number; dy: number }): void {
     const bend = this.bends().find((b) => b.id === move.id);
     if (!bend) return;
-    this.draft.updateBend(move.id, {
+    void this.persist(move.id, {
       startX: bend.startX + move.dx,
       startY: bend.startY + move.dy,
       endX: bend.endX + move.dx,
@@ -87,39 +98,71 @@ export class BendsStepComponent {
     ];
     const [sx, sy] = spin(bend.startX, bend.startY);
     const [ex, ey] = spin(bend.endX, bend.endY);
-    this.draft.updateBend(bend.id, { startX: sx, startY: sy, endX: ex, endY: ey });
+    void this.persist(bend.id, { startX: sx, startY: sy, endX: ex, endY: ey });
   }
 
-  save(): void {
+  /** Sends a geometry change to the server, surfacing any rejection to the user. */
+  private async persist(id: string, patch: Partial<BendLine>): Promise<void> {
+    const drawingId = this.params().drawingId;
+    if (!drawingId) return;
+    try {
+      this.saveError.set(null);
+      await this.draft.updateBend(drawingId, id, patch);
+    } catch (error) {
+      this.saveError.set((error as Error).message);
+      await this.draft.loadBends(drawingId);
+    }
+  }
+
+  async save(): Promise<void> {
     if (this.angleError()) return;
-    const selected = this.selected();
-    if (selected) {
-      this.draft.updateBend(selected.id, { angleDeg: this.angle(), direction: this.direction() });
-      this.syncCount();
+    const drawingId = this.params().drawingId;
+    if (!drawingId) {
+      this.saveError.set('Upload a drawing before adding bend lines.');
       return;
     }
-    const draft = this.pendingDraft();
-    if (!draft) return;
-    const bend: BendLine = {
-      id: `bnd_${Math.round(this.bends().length + 1)}_${this.bends().length}`,
-      drawingId: this.params().drawingId || 'drw_1',
-      startX: draft.startX,
-      startY: draft.startY,
-      endX: draft.endX,
-      endY: draft.endY,
-      angleDeg: this.angle(),
-      direction: this.direction(),
-    };
-    this.draft.addBend(bend);
-    this.pendingDraft.set(null);
-    this.selectedId.set(bend.id);
-    this.syncCount();
+    this.saveError.set(null);
+    const selected = this.selected();
+    try {
+      if (selected) {
+        await this.draft.updateBend(drawingId, selected.id, {
+          angleDeg: this.angle(),
+          direction: this.direction(),
+        });
+        this.syncCount();
+        return;
+      }
+      const draft = this.pendingDraft();
+      if (!draft) return;
+      // The server re-validates the angle and direction; a rejection lands in
+      // saveError rather than silently adding an unproducible bend.
+      const created = await this.draft.addBend(drawingId, {
+        startX: draft.startX,
+        startY: draft.startY,
+        endX: draft.endX,
+        endY: draft.endY,
+        angleDeg: this.angle(),
+        direction: this.direction(),
+      });
+      this.pendingDraft.set(null);
+      this.selectedId.set(created.id);
+      this.syncCount();
+    } catch (error) {
+      this.saveError.set((error as Error).message);
+    }
   }
 
-  remove(id: string): void {
-    this.draft.removeBend(id);
-    if (this.selectedId() === id) this.selectedId.set(null);
-    this.syncCount();
+  async remove(id: string): Promise<void> {
+    const drawingId = this.params().drawingId;
+    if (!drawingId) return;
+    try {
+      this.saveError.set(null);
+      await this.draft.removeBend(drawingId, id);
+      if (this.selectedId() === id) this.selectedId.set(null);
+      this.syncCount();
+    } catch (error) {
+      this.saveError.set((error as Error).message);
+    }
   }
 
   private syncCount(): void {

@@ -3,7 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BrandingService } from '../../core/branding.service';
 import type { Order } from '../../core/models';
-import { MOCK_ORDERS } from '../../core/mock/fixtures';
+import { OrderApi } from '../../core/api/domain.service';
 
 const FIRST_DELAY_MS = 800;
 const BACKOFF_FACTOR = 1.6;
@@ -26,9 +26,9 @@ export class PaymentReturnComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly branding = inject(BrandingService);
 
-  /** MOCK DATA — replace initializer with [] and load via API */
-  readonly orders = signal<Order[]>(MOCK_ORDERS);
+  private readonly orderApi = inject(OrderApi);
 
+  readonly orders = signal<Order[]>([]);
   readonly business = this.branding.settings;
 
   private readonly params = toSignal(this.route.paramMap, {
@@ -48,7 +48,8 @@ export class PaymentReturnComponent implements OnInit, OnDestroy {
   /** Preview-only switch that exercises the bounded-failure path. */
   readonly simulateNoWebhook = signal(false);
 
-  readonly maxAttempts = computed(() => (this.simulateNoWebhook() ? 6 : 4));
+  /** Enough attempts to cover ~30s of backoff — a webhook normally lands in under 2s. */
+  readonly maxAttempts = computed(() => (this.simulateNoWebhook() ? 6 : 8));
   readonly progressPct = computed(() =>
     Math.min(100, Math.round((this.attempt() / this.maxAttempts()) * 100)),
   );
@@ -63,7 +64,9 @@ export class PaymentReturnComponent implements OnInit, OnDestroy {
     this.clearTimers();
   }
 
+  /** Preview-only switch that exercises the bounded-failure path. */
   toggleSimulate(): void {
+    if (!COLOSSUS_PREVIEW) return;
     this.simulateNoWebhook.update((v) => !v);
     this.restart();
   }
@@ -81,31 +84,56 @@ export class PaymentReturnComponent implements OnInit, OnDestroy {
   }
 
   private schedule(): void {
-    this.timers.push(setTimeout(() => this.poll(), this.delayMs()));
+    this.timers.push(setTimeout(() => void this.poll(), this.delayMs()));
   }
 
-  private poll(): void {
+  /**
+   * One poll tick. Stripe redirects the customer here the instant payment succeeds,
+   * which can beat the webhook that actually creates the order — so a 404 is the
+   * EXPECTED early answer, not a failure. Each miss backs off and retries; only
+   * after maxAttempts does the page fall back to the "we'll email you" state, which
+   * is safe because the order will still be created when the webhook lands.
+   */
+  private async poll(): Promise<void> {
     const next = this.attempt() + 1;
     this.attempt.set(next);
+
+    const order = await this.findOrder();
+    if (order) {
+      await this.router.navigate(['/orders', order.id, 'confirmation']);
+      return;
+    }
 
     if (next < this.maxAttempts()) {
       this.delayMs.set(Math.min(Math.round(this.delayMs() * BACKOFF_FACTOR), MAX_DELAY_MS));
       this.schedule();
       return;
     }
-
-    // The order only exists once the webhook has been processed — never assume it.
-    const order = this.simulateNoWebhook() ? undefined : this.findOrder();
-    if (!order) {
-      this.state.set('timed-out');
-      return;
-    }
-    void this.router.navigate(['/orders', order.id, 'confirmation']);
+    this.state.set('timed-out');
   }
 
-  private findOrder(): Order | undefined {
-    const all = this.orders();
-    return all.find((o) => o.quoteId === this.quoteId()) ?? all[0];
+  /** Resolves the order for this payment session, or undefined while it is pending. */
+  private async findOrder(): Promise<Order | undefined> {
+    if (COLOSSUS_PREVIEW) {
+      // No server behind the static preview host; exercise the timed-out path only.
+      return undefined;
+    }
+    if (this.simulateNoWebhook()) return undefined;
+    const sessionId = this.sessionId();
+    try {
+      if (sessionId && sessionId !== 'unknown') {
+        const order = await this.orderApi.bySession(sessionId);
+        this.orders.set([order]);
+        return order;
+      }
+      // No session id in the URL — fall back to matching on the quote.
+      const orders = await this.orderApi.list();
+      this.orders.set(orders);
+      return orders.find((o) => o.quoteId === this.quoteId());
+    } catch {
+      // 404 means the webhook has not landed yet; keep polling.
+      return undefined;
+    }
   }
 
   private clearTimers(): void {

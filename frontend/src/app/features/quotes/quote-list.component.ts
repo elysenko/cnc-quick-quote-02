@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { Quote } from '../../core/models';
-import { MOCK_QUOTES, money } from '../../core/mock/fixtures';
+import { money } from '../../core/format';
+import { QuoteApi } from '../../core/api/domain.service';
 
 @Component({
   selector: 'app-quote-list',
@@ -11,15 +12,30 @@ import { MOCK_QUOTES, money } from '../../core/mock/fixtures';
   styleUrl: './quote-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class QuoteListComponent {
+export class QuoteListComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly quoteApi = inject(QuoteApi);
 
   readonly money = money;
-  // MOCK DATA — replace initializer with [] and load via API
-  readonly quotes = signal<Quote[]>(MOCK_QUOTES);
-  readonly loading = signal(false);
+  readonly quotes = signal<Quote[]>([]);
+  readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+
+  /**
+   * Loads the full list once and filters/sorts/pages in the browser. Status counts
+   * in the filter chips are derived from the unfiltered set, so a server-side status
+   * filter would need a second count query for no benefit at this list size.
+   */
+  async ngOnInit(): Promise<void> {
+    try {
+      this.quotes.set(await this.quoteApi.list());
+    } catch (error) {
+      this.error.set((error as Error).message);
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   readonly queryParams = toSignal(this.route.queryParamMap, { initialValue: null });
   readonly status = computed(() => this.queryParams()?.get('status') ?? 'all');

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MOCK_MACHINE } from '../../core/mock/fixtures';
+import { SettingsApi } from '../../core/api/domain.service';
 import type { MachineSettings } from '../../core/models';
 
 const BYTES_PER_MB = 1024 * 1024;
@@ -17,21 +17,20 @@ const EXT_PATTERN = /^\.[a-z0-9]{1,6}$/;
 })
 export class AdminMachineComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly settingsApi = inject(SettingsApi);
 
-  // MOCK DATA — replace initializer with [] and load via API
-  readonly machine = signal<MachineSettings>(MOCK_MACHINE);
-  // MOCK DATA — replace initializer with [] and load via API
-  readonly extensions = signal<string[]>([...MOCK_MACHINE.allowedExtensions]);
+  readonly machine = signal<MachineSettings>(NEUTRAL_MACHINE);
+  readonly extensions = signal<string[]>([...NEUTRAL_MACHINE.allowedExtensions]);
 
   readonly saved = signal(false);
   readonly saveError = signal<string | null>(null);
   readonly extError = signal<string | null>(null);
 
   readonly form = this.fb.nonNullable.group({
-    sheetSpacingMm: [MOCK_MACHINE.sheetSpacingMm, [Validators.required, Validators.min(0), Validators.max(100)]],
-    sheetMarginMm: [MOCK_MACHINE.sheetMarginMm, [Validators.required, Validators.min(0), Validators.max(200)]],
-    maxUploadMb: [MOCK_MACHINE.maxUploadBytes / BYTES_PER_MB, [Validators.required, Validators.min(0.5), Validators.max(200)]],
-    animationSpeed: [MOCK_MACHINE.animationSpeed, [Validators.required, Validators.min(0.25), Validators.max(3)]],
+    sheetSpacingMm: [NEUTRAL_MACHINE.sheetSpacingMm, [Validators.required, Validators.min(0), Validators.max(100)]],
+    sheetMarginMm: [NEUTRAL_MACHINE.sheetMarginMm, [Validators.required, Validators.min(0), Validators.max(200)]],
+    maxUploadMb: [NEUTRAL_MACHINE.maxUploadBytes / BYTES_PER_MB, [Validators.required, Validators.min(0.5), Validators.max(200)]],
+    animationSpeed: [NEUTRAL_MACHINE.animationSpeed, [Validators.required, Validators.min(0.25), Validators.max(3)]],
   });
 
   readonly newExtension = this.fb.nonNullable.control('');
@@ -42,6 +41,8 @@ export class AdminMachineComponent {
     this.form.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.draft.set(this.form.getRawValue()));
+    // Subscribed first, so the reset inside load() also refreshes `draft`.
+    void this.load();
   }
 
   readonly maxUploadBytes = computed(() => Math.round(this.draft().maxUploadMb * BYTES_PER_MB));
@@ -84,7 +85,17 @@ export class AdminMachineComponent {
     this.extError.set(null);
   }
 
-  save(): void {
+  /** Loads live machine settings, then reseeds the form (MB is a UI-only unit). */
+  private async load(): Promise<void> {
+    try {
+      this.machine.set(await this.settingsApi.machine());
+      this.revert();
+    } catch (error) {
+      this.saveError.set((error as Error).message);
+    }
+  }
+
+  async save(): Promise<void> {
     this.saveError.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -96,13 +107,21 @@ export class AdminMachineComponent {
       return;
     }
     const d = this.form.getRawValue();
-    this.machine.set({
-      sheetSpacingMm: d.sheetSpacingMm,
-      sheetMarginMm: d.sheetMarginMm,
-      allowedExtensions: this.extensions(),
-      maxUploadBytes: Math.round(d.maxUploadMb * BYTES_PER_MB),
-      animationSpeed: d.animationSpeed,
-    });
+    try {
+      this.machine.set(
+        await this.settingsApi.saveMachine({
+          sheetSpacingMm: d.sheetSpacingMm,
+          sheetMarginMm: d.sheetMarginMm,
+          allowedExtensions: this.extensions(),
+          maxUploadBytes: Math.round(d.maxUploadMb * BYTES_PER_MB),
+          animationSpeed: d.animationSpeed,
+        }),
+      );
+      this.revert();
+    } catch (error) {
+      this.saveError.set((error as Error).message);
+      return;
+    }
     this.saved.set(true);
     setTimeout(() => this.saved.set(false), 2600);
   }

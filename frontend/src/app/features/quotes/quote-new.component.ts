@@ -21,6 +21,12 @@ export class QuoteNewComponent {
   private readonly draft = inject(QuoteDraftService);
 
   readonly steps = WIZARD_STEPS;
+
+  constructor() {
+    // The shell's canAdvance() gate reads the server's qtyMin/qtyMax, so the config
+    // must be loaded even when a deep link lands directly on a later step.
+    void this.draft.ensureLoaded();
+  }
   readonly queryParams = toSignal(this.route.queryParamMap, { initialValue: null });
 
   readonly step = toSignal(

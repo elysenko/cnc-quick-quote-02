@@ -1,11 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/auth.service';
 import { BrandingService } from '../../core/branding.service';
 import type { Order, ShippingMethod } from '../../core/models';
-import { MOCK_ORDERS, MOCK_SHIPPING_METHODS, money } from '../../core/mock/fixtures';
+import { money } from '../../core/format';
+import { OrderApi, ShippingApi } from '../../core/api/domain.service';
 
 /** Post-payment receipt. Renders identically on a fresh deep-linked load. */
 @Component({
@@ -17,13 +18,13 @@ import { MOCK_ORDERS, MOCK_SHIPPING_METHODS, money } from '../../core/mock/fixtu
 })
 export class ConfirmationComponent implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
+  private readonly orderApi = inject(OrderApi);
+  private readonly shippingApi = inject(ShippingApi);
   private readonly auth = inject(AuthService);
   private readonly branding = inject(BrandingService);
 
-  /** MOCK DATA — replace initializer with [] and load via API */
-  readonly orders = signal<Order[]>(MOCK_ORDERS);
-  /** MOCK DATA — replace initializer with [] and load via API */
-  readonly shippingMethods = signal<ShippingMethod[]>(MOCK_SHIPPING_METHODS);
+  readonly orders = signal<Order[]>([]);
+  readonly shippingMethods = signal<ShippingMethod[]>([]);
 
   readonly business = this.branding.settings;
   readonly user = this.auth.user;
@@ -33,12 +34,41 @@ export class ConfirmationComponent implements OnDestroy {
     initialValue: this.route.snapshot.paramMap,
   });
   readonly orderId = computed(() => this.params().get('id') ?? '');
+  readonly loading = signal(true);
+  readonly loadError = signal<string | null>(null);
 
-  /** Falls back to the most recent order so a deep link always renders a receipt. */
-  readonly order = computed<Order | undefined>(() => {
-    const all = this.orders();
-    return all.find((o) => o.id === this.orderId()) ?? all[0];
-  });
+  /**
+   * The order named by the URL, or undefined when it does not exist or belongs to
+   * another account — the template's not-found state is the honest answer to a bad
+   * deep link rather than somebody else's receipt.
+   */
+  readonly order = computed<Order | undefined>(() => this.orders().find((o) => o.id === this.orderId()));
+
+  constructor() {
+    effect(() => {
+      const id = this.orderId();
+      if (id) void this.load(id);
+    });
+  }
+
+  /** Shipping methods are fetched only to resolve the quoted lead time below. */
+  private async load(id: string): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(null);
+    try {
+      this.orders.set([await this.orderApi.get(id)]);
+    } catch (error) {
+      this.orders.set([]);
+      this.loadError.set((error as Error).message);
+    } finally {
+      this.loading.set(false);
+    }
+    try {
+      this.shippingMethods.set(await this.shippingApi.listAll());
+    } catch {
+      // Non-admins cannot list methods; expectedDelivery falls back to its default.
+    }
+  }
 
   /** Estimated delivery = placed date + the method's quoted lead time. */
   readonly expectedDelivery = computed<string | null>(() => {

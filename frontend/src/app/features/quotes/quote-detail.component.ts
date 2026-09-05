@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { SlicePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import type { Quote } from '../../core/models';
-import { MOCK_DRAWINGS, MOCK_QUOTES, money } from '../../core/mock/fixtures';
+import type { BendLine, Drawing, Material, Quote } from '../../core/models';
+import { money } from '../../core/format';
+import { DrawingApi, MaterialApi, QuoteApi } from '../../core/api/domain.service';
 import { WorkbedCanvasComponent } from '../../shared/workbed/workbed-canvas.component';
-import { QuoteDraftService } from './wizard';
 
 @Component({
   selector: 'app-quote-detail',
@@ -17,32 +17,64 @@ import { QuoteDraftService } from './wizard';
 export class QuoteDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly draft = inject(QuoteDraftService);
+  private readonly quoteApi = inject(QuoteApi);
+  private readonly drawingApi = inject(DrawingApi);
+  private readonly materialApi = inject(MaterialApi);
   private readonly bed = viewChild(WorkbedCanvasComponent);
 
   readonly money = money;
-  // MOCK DATA — replace initializer with [] and load via API
-  readonly quotes = signal<Quote[]>(MOCK_QUOTES);
-  readonly drawings = signal(MOCK_DRAWINGS);
-  readonly bends = this.draft.bends;
+  readonly quotes = signal<Quote[]>([]);
+  readonly drawings = signal<Drawing[]>([]);
+  /** Bend lines belonging to THIS quote's drawing, loaded from the server. */
+  readonly bends = signal<BendLine[]>([]);
   readonly sheetIndex = signal(1);
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
 
   readonly routeParams = toSignal(this.route.paramMap, { initialValue: null });
   readonly queryParams = toSignal(this.route.queryParamMap, { initialValue: null });
 
-  readonly quote = computed(() => {
-    const id = this.routeParams()?.get('id');
-    return this.quotes().find((q) => q.id === id) ?? null;
-  });
+  readonly quote = signal<Quote | null>(null);
+  readonly drawing = signal<Drawing | null>(null);
+  readonly material = signal<Material | null>(null);
 
-  readonly drawing = computed(() => {
-    const quote = this.quote();
-    return quote ? (this.drawings().find((d) => d.id === quote.drawingId) ?? null) : null;
-  });
+  constructor() {
+    // Re-runs on every :id change, so navigating between quotes refetches rather
+    // than showing the previous quote's geometry.
+    effect(() => {
+      const id = this.routeParams()?.get('id');
+      if (id) void this.load(id);
+    });
+  }
 
-  readonly material = computed(() =>
-    this.draft.materials().find((m) => m.id === this.quote()?.materialId) ?? null,
-  );
+  /**
+   * Loads the quote, then its drawing geometry, bend lines and material in parallel.
+   * The secondary fetches are individually tolerant: the page still renders the
+   * quote and its price if, say, the drawing geometry is unavailable.
+   */
+  private async load(id: string): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const quote = await this.quoteApi.get(id);
+      this.quote.set(quote);
+      this.quotes.set([quote]);
+      const [drawing, bends, materials] = await Promise.all([
+        this.drawingApi.get(quote.drawingId).catch(() => null),
+        this.drawingApi.bends(quote.drawingId).catch(() => [] as BendLine[]),
+        this.materialApi.list().catch(() => [] as Material[]),
+      ]);
+      this.drawing.set(drawing);
+      this.drawings.set(drawing ? [drawing] : []);
+      this.bends.set(bends);
+      this.material.set(materials.find((m) => m.id === quote.materialId) ?? null);
+    } catch (error) {
+      this.quote.set(null);
+      this.error.set((error as Error).message);
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   readonly panel = computed(() => this.queryParams()?.get('panel') ?? '');
   readonly modal = computed(() => this.queryParams()?.get('modal') ?? '');

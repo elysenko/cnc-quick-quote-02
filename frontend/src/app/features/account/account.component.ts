@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { BrandingService } from '../../core/branding.service';
 import type { Order, Role, ShippingAddress } from '../../core/models';
-import { MOCK_ORDERS } from '../../core/mock/fixtures';
+import { OrderApi } from '../../core/api/domain.service';
 
 /** Account overview: identity, default delivery address and quick links. */
 @Component({
@@ -21,13 +21,27 @@ export class AccountComponent {
   /** Preview-only affordances are folded out of production bundles. */
   readonly isPreview = COLOSSUS_PREVIEW;
 
-  /** MOCK DATA — replace initializer with [] and load via API */
-  readonly orders = signal<Order[]>(MOCK_ORDERS);
-  /** MOCK DATA — replace with the account's createdAt from the API */
-  readonly memberSince = signal<string>('2025-04-18T09:00:00Z');
+  private readonly orderApi = inject(OrderApi);
+
+  readonly orders = signal<Order[]>([]);
+  /** The account's own createdAt, resolved from /auth/me by AuthService. */
+  readonly memberSince = this.auth.memberSince;
 
   readonly user = this.auth.user;
   readonly business = this.branding.settings;
+
+  constructor() {
+    // Order history backs both the order count and the address prefill below.
+    void this.loadOrders();
+  }
+
+  private async loadOrders(): Promise<void> {
+    try {
+      this.orders.set(await this.orderApi.list());
+    } catch {
+      // The page still renders identity and contact details without order history.
+    }
+  }
 
   readonly defaultAddress = computed<ShippingAddress | null>(
     () => this.orders()[0]?.shippingAddress ?? null,

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MOCK_SHIPPING_METHODS, money } from '../../../core/mock/fixtures';
+import { money } from '../../../core/format';
+import { ShippingApi } from '../../../core/api/domain.service';
 import type { ShippingMethod } from '../../../core/models';
 
 /** Shipping method catalogue. Customers pick one of the active methods at checkout. */
@@ -13,11 +14,11 @@ import type { ShippingMethod } from '../../../core/models';
 })
 export class AdminShippingComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly shippingApi = inject(ShippingApi);
 
-  // MOCK DATA — replace initializer with [] and load via API
-  readonly methods = signal<ShippingMethod[]>(MOCK_SHIPPING_METHODS);
+  readonly methods = signal<ShippingMethod[]>([]);
 
-  readonly loading = signal(false);
+  readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly saved = signal(false);
   readonly savedMessage = signal('');
@@ -70,12 +71,30 @@ export class AdminShippingComponent {
     this.editingId.set(null);
   }
 
-  save(): void {
+  constructor() {
+    void this.load();
+  }
+
+  /** Admin list — includes inactive methods, unlike the checkout-facing endpoint. */
+  private async load(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(null);
+    try {
+      this.methods.set(await this.shippingApi.listAll());
+    } catch (error) {
+      this.loadError.set((error as Error).message);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async save(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     const value = this.form.getRawValue();
+    // The form works in dollars; the API and database store integer cents only.
     const patch = {
       name: value.name.trim(),
       rateType: value.rateType,
@@ -84,29 +103,52 @@ export class AdminShippingComponent {
       isActive: value.isActive,
     };
     const id = this.editingId();
-    if (id) {
-      this.methods.update((list) => list.map((m) => (m.id === id ? { ...m, ...patch } : m)));
-    } else {
-      this.methods.update((list) => [
-        ...list,
-        { id: `S${list.length + 1}${Date.now().toString().slice(-3)}`, ...patch },
-      ]);
+    try {
+      if (id) {
+        const saved = await this.shippingApi.update(id, patch);
+        this.methods.update((list) => list.map((m) => (m.id === id ? saved : m)));
+      } else {
+        const created = await this.shippingApi.create(patch);
+        this.methods.update((list) => [...list, created]);
+      }
+    } catch (error) {
+      this.loadError.set((error as Error).message);
+      return;
     }
     this.confirm(`${patch.name} saved`);
     this.closeEditor();
   }
 
-  toggleActive(method: ShippingMethod): void {
-    this.methods.update((list) =>
-      list.map((m) => (m.id === method.id ? { ...m, isActive: !m.isActive } : m)),
-    );
-    this.confirm(`${method.name} ${method.isActive ? 'deactivated' : 'activated'}`);
+  /** Optimistic toggle with rollback — the row has no per-row pending affordance. */
+  async toggleActive(method: ShippingMethod): Promise<void> {
+    const next = !method.isActive;
+    this.methods.update((list) => list.map((m) => (m.id === method.id ? { ...m, isActive: next } : m)));
+    try {
+      const saved = await this.shippingApi.update(method.id, { isActive: next });
+      this.methods.update((list) => list.map((m) => (m.id === method.id ? saved : m)));
+      this.confirm(`${method.name} ${next ? 'activated' : 'deactivated'}`);
+    } catch (error) {
+      this.methods.update((list) =>
+        list.map((m) => (m.id === method.id ? { ...m, isActive: method.isActive } : m)),
+      );
+      this.loadError.set((error as Error).message);
+    }
   }
 
-  remove(method: ShippingMethod): void {
-    this.methods.update((list) => list.filter((m) => m.id !== method.id));
+  /**
+   * The server deactivates rather than deletes when past orders reference the
+   * method, so the list is refetched instead of assuming the row disappeared.
+   */
+  async remove(method: ShippingMethod): Promise<void> {
+    try {
+      await this.shippingApi.remove(method.id);
+    } catch (error) {
+      this.loadError.set((error as Error).message);
+      return;
+    }
     if (this.editingId() === method.id) this.closeEditor();
     this.confirm(`${method.name} deleted`);
+    await this.load();
   }
 
   private confirm(message: string): void {

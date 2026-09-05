@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import type { Order } from '../../core/models';
-import { MOCK_ORDERS, money } from '../../core/mock/fixtures';
+import { money } from '../../core/format';
+import { OrderApi } from '../../core/api/domain.service';
 
 interface StatusFilter {
   id: string;
@@ -25,11 +26,11 @@ const FILTERS: StatusFilter[] = [
   styleUrl: './order-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OrderListComponent implements OnInit, OnDestroy {
+export class OrderListComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly orderApi = inject(OrderApi);
 
-  /** MOCK DATA — replace initializer with [] and load via API */
-  readonly orders = signal<Order[]>(MOCK_ORDERS);
+  readonly orders = signal<Order[]>([]);
 
   readonly filters = FILTERS;
   readonly money = money;
@@ -48,15 +49,16 @@ export class OrderListComponent implements OnInit, OnDestroy {
     return status === 'all' ? all : all.filter((o) => o.status === status);
   });
 
-  private timer: ReturnType<typeof setTimeout> | null = null;
+  readonly loadError = signal<string | null>(null);
 
-  ngOnInit(): void {
-    // Stands in for the initial fetch so the skeleton state is reviewable.
-    this.timer = setTimeout(() => this.loading.set(false), 650);
-  }
-
-  ngOnDestroy(): void {
-    if (this.timer !== null) clearTimeout(this.timer);
+  async ngOnInit(): Promise<void> {
+    try {
+      this.orders.set(await this.orderApi.list());
+    } catch (error) {
+      this.loadError.set((error as Error).message);
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   countFor(id: string): number {

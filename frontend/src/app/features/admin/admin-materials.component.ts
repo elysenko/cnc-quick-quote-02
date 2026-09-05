@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, u
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MOCK_MATERIALS } from '../../core/mock/fixtures';
+import { MaterialApi } from '../../core/api/domain.service';
 import type { Material } from '../../core/models';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
@@ -24,9 +24,9 @@ export class AdminMaterialsComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  private readonly materialApi = inject(MaterialApi);
 
-  // MOCK DATA — replace initializer with [] and load via API
-  readonly materials = signal<Material[]>(MOCK_MATERIALS);
+  readonly materials = signal<Material[]>([]);
 
   readonly loading = signal(false);
   readonly loadError = signal<string | null>(null);
@@ -76,14 +76,32 @@ export class AdminMaterialsComponent {
   });
 
   constructor() {
+    void this.load();
+    // The edit form is rebuilt whenever ?modal / ?id change. It also re-runs after
+    // the catalogue arrives, because a deep link to ?modal=edit&id=… resolves before
+    // the fetch completes and would otherwise prefill an empty form.
     effect(
       () => {
         const mode = this.modal();
         const id = this.editingId();
+        this.materials();
         untracked(() => this.syncForm(mode, id));
       },
       { allowSignalWrites: true },
     );
+  }
+
+  /** Admin catalogue — unlike the customer endpoint this includes inactive rows. */
+  private async load(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(null);
+    try {
+      this.materials.set(await this.materialApi.listAll());
+    } catch (error) {
+      this.loadError.set((error as Error).message);
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   private syncForm(mode: ModalMode, id: string | null): void {
@@ -124,14 +142,31 @@ export class AdminMaterialsComponent {
     this.merge({ modal: null, id: null });
   }
 
-  toggleActive(material: Material): void {
-    this.materials.update((list) =>
-      list.map((m) => (m.id === material.id ? { ...m, isActive: !m.isActive } : m)),
-    );
-    this.confirm(`${material.name} ${material.isActive ? 'deactivated' : 'activated'}`);
+  /**
+   * Optimistic toggle with rollback — the row has no per-row spinner in the approved
+   * design, so the flip must look instant and undo itself if the server refuses.
+   */
+  async toggleActive(material: Material): Promise<void> {
+    const next = !material.isActive;
+    this.materials.update((list) => list.map((m) => (m.id === material.id ? { ...m, isActive: next } : m)));
+    try {
+      const saved = await this.materialApi.update(material.id, { isActive: next });
+      this.materials.update((list) => list.map((m) => (m.id === material.id ? saved : m)));
+      this.confirm(`${material.name} ${next ? 'activated' : 'deactivated'}`);
+    } catch (error) {
+      this.materials.update((list) =>
+        list.map((m) => (m.id === material.id ? { ...m, isActive: material.isActive } : m)),
+      );
+      this.serverError.set((error as Error).message);
+    }
   }
 
-  save(): void {
+  /**
+   * Creates or updates the material. The duplicate-name rule is enforced by the
+   * server (409); this only surfaces its message, so two admins racing on the same
+   * name cannot both win.
+   */
+  async save(): Promise<void> {
     this.serverError.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -140,21 +175,17 @@ export class AdminMaterialsComponent {
     const value = this.form.getRawValue();
     const name = value.name.trim();
     const editingId = this.modal() === 'edit' ? this.editingId() : null;
-    const clash = this.materials().some(
-      (m) => m.id !== editingId && m.name.trim().toLowerCase() === name.toLowerCase(),
-    );
-    if (clash) {
-      this.serverError.set(`422 — a material named “${name}” already exists in the catalogue.`);
+    try {
+      if (editingId) {
+        const saved = await this.materialApi.update(editingId, { ...value, name });
+        this.materials.update((list) => list.map((m) => (m.id === editingId ? saved : m)));
+      } else {
+        const created = await this.materialApi.create({ ...value, name });
+        this.materials.update((list) => [...list, created]);
+      }
+    } catch (error) {
+      this.serverError.set((error as Error).message);
       return;
-    }
-
-    if (editingId) {
-      this.materials.update((list) =>
-        list.map((m) => (m.id === editingId ? { ...m, ...value, name } : m)),
-      );
-    } else {
-      const nextId = `M${this.materials().length + 1}${Date.now().toString().slice(-3)}`;
-      this.materials.update((list) => [...list, { id: nextId, ...value, name }]);
     }
     this.confirm(`${name} saved`);
     this.closeModal();

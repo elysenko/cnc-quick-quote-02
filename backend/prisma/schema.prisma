@@ -16,6 +16,11 @@ model User {
   role         Role     @default(USER)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  drawings      Drawing[]
+  quotes        Quote[]
+  orders        Order[]
 }
 
 /// One value per role the stack contract declares (stacks/combos/enterprise.json auth.roles).
@@ -40,4 +45,239 @@ model ColossusAccount {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("colossus_accounts")
+}
+
+// ---------------------------------------------------------------------------
+// CNC Quick Quote domain
+//
+// MONEY: every monetary value is an integer number of CENTS (`Int`). Never Float,
+// never Decimal — floats lose pennies and Decimal round-trips as a string over the
+// wire. Pricing math is done in a decimal-safe representation in the pricing service
+// and rounded to integer cents exactly once, at the end.
+//
+// GEOMETRY: every length is millimetres (Float). Conversion to linear feet happens
+// only inside the pricing service.
+// ---------------------------------------------------------------------------
+
+/// Arbitrary key/value app configuration, the fallback tier behind process.env for
+/// resolveConfig(). Holds service + integration credentials entered by an admin.
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+/// One row per issued refresh token. Rotation revokes the presented `jti` and mints
+/// a new one; reuse of a revoked jti is a hard 401.
+model RefreshToken {
+  id        String    @id @default(uuid())
+  jti       String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Material {
+  id             String   @id @default(uuid())
+  name           String
+  thicknessMm    Float
+  sheetWidthMm   Float
+  sheetHeightMm  Float
+  /// Multiplies the per-sheet cost. Dimensionless, not money.
+  costMultiplier Float    @default(1)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  quotes Quote[]
+
+  @@index([isActive])
+}
+
+/// A parsed CAD upload. The stored object is never rewritten — bend lines live in
+/// their own table so the customer's original file stays byte-identical.
+model Drawing {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filename     String
+  objectKey    String
+  sizeBytes    Int
+  /// { paths: number[][] } — flat [x0,y0,x1,y1,...] polylines in mm for the canvas.
+  geometryJson Json
+  bboxWMm      Float
+  bboxHMm      Float
+  cutLengthMm  Float
+  entityCount  Int
+  createdAt    DateTime @default(now())
+
+  bends  BendLine[]
+  quotes Quote[]
+
+  @@index([userId])
+}
+
+model BendLine {
+  id        String   @id @default(uuid())
+  drawingId String
+  drawing   Drawing  @relation(fields: [drawingId], references: [id], onDelete: Cascade)
+  startX    Float
+  startY    Float
+  endX      Float
+  endY      Float
+  /// 0..180 inclusive, validated server-side.
+  angleDeg  Float
+  /// "up" | "down"
+  direction String
+  createdAt DateTime @default(now())
+
+  @@index([drawingId])
+}
+
+/// An issued quote. `pricingSnapshotJson` is a COPY of the pricing settings at issue
+/// time, so later admin price edits never mutate an already-quoted total.
+model Quote {
+  id                  String   @id @default(uuid())
+  reference           String   @unique
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drawingId           String
+  drawing             Drawing  @relation(fields: [drawingId], references: [id])
+  materialId          String
+  material            Material @relation(fields: [materialId], references: [id])
+  quantity            Int
+  cutLengthMmTotal    Float
+  bendCount           Int
+  sheetCount          Int
+  perSheet            Int
+  utilization         Float
+  /// { placements: [{sheet,x,y}], perSheet, cols, rows }
+  nestingJson         Json
+  pricingSnapshotJson Json
+  /// [{ label, detail, amountCents }]
+  breakdownJson       Json
+  totalCents          Int
+  /// "draft" | "ordered" | "expired"
+  status              String   @default("draft")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  order Order?
+
+  @@index([userId, status])
+}
+
+/// Singleton (id = "singleton").
+model PricingSettings {
+  id                     String   @id @default("singleton")
+  setupFeeCents          Int      @default(5000)
+  costPerLinearFootCents Int      @default(250)
+  perSheetCostCents      Int      @default(1200)
+  handlingFeeCents       Int      @default(1500)
+  costPerBendCents       Int      @default(75)
+  minimumOrderCents      Int      @default(7500)
+  qtyMin                 Int      @default(1)
+  qtyMax                 Int      @default(1000)
+  updatedAt              DateTime @updatedAt
+}
+
+/// Singleton (id = "singleton").
+model MachineSettings {
+  id                String   @id @default("singleton")
+  sheetSpacingMm    Float    @default(5)
+  sheetMarginMm     Float    @default(10)
+  allowedExtensions String[] @default([".dxf"])
+  maxUploadBytes    Int      @default(5242880)
+  animationSpeed    Float    @default(1)
+  updatedAt         DateTime @updatedAt
+}
+
+/// Singleton (id = "singleton"). Stripe secrets are AES-256-GCM encrypted at rest
+/// and are write-only over the API — reads return "••••last4" only.
+model BusinessSettings {
+  id                     String   @id @default("singleton")
+  companyName            String   @default("CNC Quick Quote")
+  logoUrl                String   @default("")
+  primaryColor           String   @default("#1d4ed8")
+  accentColor            String   @default("#ea580c")
+  contactEmail           String   @default("")
+  contactPhone           String   @default("")
+  addressLine1           String   @default("")
+  addressLine2           String   @default("")
+  supportHours           String   @default("")
+  stripePublishableKey   String   @default("")
+  stripeSecretKeyEnc     String?
+  stripeSecretLast4      String   @default("")
+  stripeWebhookSecretEnc String?
+  stripeWebhookLast4     String   @default("")
+  updatedAt              DateTime @updatedAt
+}
+
+model ShippingMethod {
+  id              String   @id @default(uuid())
+  name            String
+  /// "flat" | "perSheet"
+  rateType        String
+  rateCents       Int
+  estDeliveryDays Int
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([isActive])
+}
+
+model Order {
+  id                    String          @id @default(uuid())
+  userId                String
+  user                  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quoteId               String          @unique
+  quote                 Quote           @relation(fields: [quoteId], references: [id])
+  shippingMethodId      String?
+  shippingMethod        ShippingMethod? @relation(fields: [shippingMethodId], references: [id])
+  shippingMethodName    String          @default("")
+  shippingCostCents     Int             @default(0)
+  subtotalCents         Int             @default(0)
+  shippingAddressJson   Json
+  totalCents            Int
+  orderNumber           String          @unique
+  confirmationNumber    String          @unique
+  stripeSessionId       String          @unique
+  stripePaymentIntentId String?
+  /// "paid" | "in_production" | "shipped"
+  status                String          @default("paid")
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  emailLogs EmailLog[]
+
+  @@index([userId])
+}
+
+/// Idempotency ledger for Stripe webhooks — a duplicate event id is a no-op.
+model WebhookEvent {
+  id            String   @id @default(uuid())
+  stripeEventId String   @unique
+  type          String
+  receivedAt    DateTime @default(now())
+}
+
+/// Confirmation-email delivery attempts. A failure here is RECORDED, never thrown —
+/// an unsendable email must not fail an order the customer already paid for.
+model EmailLog {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    String
+  attempts  Int      @default(0)
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
 }
