@@ -1,0 +1,156 @@
+[
+  {
+    "id": "a2-1",
+    "category": "wrong_behavior",
+    "file": "frontend/src/app/features/admin/business/branding.component.ts",
+    "description": "Branding admin form calls the local-only BrandingService.update() instead of the persisting save(), so branding changes never reach the backend despite a false success banner.",
+    "check": {
+      "kind": "grep",
+      "file": "frontend/src/app/features/admin/business/branding.component.ts",
+      "pattern": "this\\.branding\\.save\\(",
+      "expect": "present"
+    },
+    "status": "fixed",
+    "raised_attempt": 2,
+    "times_raised": 1,
+    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
+    "patched_attempt": 2
+  },
+  {
+    "id": "a2-2",
+    "category": "wrong_behavior",
+    "file": "frontend/src/app/features/admin/business/contact.component.ts",
+    "description": "Contact admin form calls the local-only BrandingService.update() instead of the persisting save(), so contact info changes never reach the backend.",
+    "check": {
+      "kind": "grep",
+      "file": "frontend/src/app/features/admin/business/contact.component.ts",
+      "pattern": "this\\.branding\\.save\\(",
+      "expect": "present"
+    },
+    "status": "fixed",
+    "raised_attempt": 2,
+    "times_raised": 1,
+    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
+    "patched_attempt": 2
+  },
+  {
+    "id": "a2-3",
+    "category": "wrong_behavior",
+    "file": "backend/src/auth/auth.service.ts",
+    "description": "Passwords are hashed with bcrypt instead of the spec-mandated Argon2 algorithm.",
+    "check": {
+      "kind": "grep",
+      "file": "backend/src/auth/auth.service.ts",
+      "pattern": "argon2",
+      "expect": "present"
+    },
+    "status": "fixed",
+    "raised_attempt": 2,
+    "times_raised": 1,
+    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
+    "patched_attempt": 2
+  },
+  {
+    "id": "a2-4",
+    "category": "wrong_behavior",
+    "file": "backend/src/domain/pricing.spec.ts",
+    "description": "The project's declared backend typecheck command (npx tsc --noEmit) fails with 7 type errors due to an under-typed test helper.",
+    "check": {
+      "kind": "grep",
+      "file": "backend/src/domain/pricing.spec.ts",
+      "pattern": "breakdown: BreakdownLine\\[\\]",
+      "expect": "present"
+    },
+    "status": "fixed",
+    "raised_attempt": 2,
+    "times_raised": 1,
+    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
+    "patched_attempt": 2
+  },
+  {
+    "id": "a2-5",
+    "category": "wrong_behavior",
+    "file": "frontend/src/app/core/api.service.ts",
+    "description": "On terminal refresh failure the API wrapper clears tokens but never redirects to /login, leaving the session in a dead state on the current page.",
+    "check": {
+      "kind": "grep",
+      "file": "frontend/src/app/core/api.service.ts",
+      "pattern": "router\\.navigate\\(\\['/login'\\]\\)",
+      "expect": "present"
+    },
+    "status": "open",
+    "raised_attempt": 2,
+    "times_raised": 1,
+    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
+    "patched_attempt": 2,
+    "reopen_reason": "deterministic check failed after patch"
+  },
+  {
+    "id": "a2-6",
+    "category": "wrong_behavior",
+    "file": "frontend/src/app/features/quotes/quote-detail.component.ts",
+    "description": "machine_settings.animation_speed is never fetched or bound to the workbed canvas, so admin-configured animation speed has no effect on the laser animation.",
+    "check": {
+      "kind": "grep",
+      "file": "frontend/src/app/features/quotes/quote-detail.component.html",
+      "pattern": "\\[animationSpeed\\]",
+      "expect": "present"
+    },
+    "status": "open",
+    "raised_attempt": 2,
+    "times_raised": 1,
+    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
+    "patched_attempt": 2,
+    "reopen_reason": "deterministic check failed after patch"
+  },
+  {
+    "id": "a2-7",
+    "category": "test_missing",
+    "file": "backend/src/auth/auth.controller.spec.ts",
+    "description": "No auth/RBAC/rate-limit tests exist anywhere in the backend despite the plan requiring table-driven 401/403/200 coverage and refresh-rotation tests.",
+    "check": {
+      "kind": "file_exists",
+      "file": "backend/src/auth/auth.controller.spec.ts"
+    },
+    "status": "open",
+    "raised_attempt": 2,
+    "times_raised": 1,
+    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
+    "patched_attempt": 2,
+    "reopen_reason": "deterministic check failed after patch"
+  },
+  {
+    "id": "a2-8",
+    "category": "edge_case",
+    "file": "frontend/src/app/app.config.ts",
+    "description": "BrandingService is not wired via an APP_INITIALIZER as the plan requires, relying instead on incidental lazy DI instantiation.",
+    "check": {
+      "kind": "grep",
+      "file": "frontend/src/app/app.config.ts",
+      "pattern": "APP_INITIALIZER",
+      "expect": "present"
+    },
+    "status": "open",
+    "raised_attempt": 2,
+    "times_raised": 1,
+    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
+    "patched_attempt": 2,
+    "reopen_reason": "deterministic check failed after patch"
+  },
+  {
+    "id": "a2-9",
+    "category": "test_missing",
+    "file": "backend/src/quotes/quotes.service.spec.ts",
+    "description": "No test verifies that a quote's stored total is immune to later pricing_settings changes, though the plan explicitly requires this test case.",
+    "check": {
+      "kind": "file_exists",
+      "file": "backend/src/quotes/quotes.service.spec.ts"
+    },
+    "status": "open",
+    "raised_attempt": 2,
+    "times_raised": 1,
+    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
+    "patched_attempt": 2,
+    "reopen_reason": "deterministic check failed after patch"
+  }
+]

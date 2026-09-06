@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, v
 import { toSignal } from '@angular/core/rxjs-interop';
 import { SlicePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import type { BendLine, Drawing, Material, Quote } from '../../core/models';
+import type { BendLine, Drawing, MachineSettings, Material, Quote } from '../../core/models';
 import { money } from '../../core/format';
+import { ApiService } from '../../core/api.service';
 import { DrawingApi, MaterialApi, QuoteApi } from '../../core/api/domain.service';
 import { WorkbedCanvasComponent } from '../../shared/workbed/workbed-canvas.component';
 
@@ -17,6 +18,7 @@ import { WorkbedCanvasComponent } from '../../shared/workbed/workbed-canvas.comp
 export class QuoteDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly api = inject(ApiService);
   private readonly quoteApi = inject(QuoteApi);
   private readonly drawingApi = inject(DrawingApi);
   private readonly materialApi = inject(MaterialApi);
@@ -30,6 +32,12 @@ export class QuoteDetailComponent {
   readonly sheetIndex = signal(1);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+  /**
+   * Machine settings (animation speed, etc.) are customer-readable operating
+   * parameters served by /api/quote-config — fetched once so the work-bed laser
+   * animation runs at the admin-configured speed rather than a hardcoded default.
+   */
+  readonly machineSettings = signal<MachineSettings | null>(null);
 
   readonly routeParams = toSignal(this.route.paramMap, { initialValue: null });
   readonly queryParams = toSignal(this.route.queryParamMap, { initialValue: null });
@@ -45,6 +53,17 @@ export class QuoteDetailComponent {
       const id = this.routeParams()?.get('id');
       if (id) void this.load(id);
     });
+    void this.loadMachineSettings();
+  }
+
+  /** Fetched once — machine settings rarely change and are shared across all quotes. */
+  private async loadMachineSettings(): Promise<void> {
+    try {
+      const config = await this.api.get<{ machine: MachineSettings }>('/quote-config');
+      this.machineSettings.set(config.machine);
+    } catch {
+      // Non-fatal: the canvas falls back to its default animation speed.
+    }
   }
 
   /**

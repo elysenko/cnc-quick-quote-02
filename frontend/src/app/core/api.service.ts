@@ -46,6 +46,7 @@ function messageOf(error: HttpErrorResponse): string {
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
   private readonly base = '/api';
   /** Shared across concurrent 401s so a burst of requests triggers one refresh. */
   private refreshInFlight: Promise<boolean> | null = null;
@@ -138,6 +139,7 @@ export class ApiService {
         return true;
       } catch {
         this.clearTokens();
+        this.router.navigate(['/login']);
         return false;
       } finally {
         this.refreshInFlight = null;
