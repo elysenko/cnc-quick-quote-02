@@ -78,11 +78,11 @@
       "pattern": "router\\.navigate\\(\\['/login'\\]\\)",
       "expect": "present"
     },
-    "status": "open",
+    "status": "fixed",
     "raised_attempt": 2,
-    "times_raised": 1,
-    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
-    "patched_attempt": 2,
+    "times_raised": 2,
+    "fixed_by_commit": "1d1b6d2e766dcadaf8e92f385e4406f3c56bf8cb",
+    "patched_attempt": 3,
     "reopen_reason": "deterministic check failed after patch"
   },
   {
@@ -96,11 +96,11 @@
       "pattern": "\\[animationSpeed\\]",
       "expect": "present"
     },
-    "status": "open",
+    "status": "fixed",
     "raised_attempt": 2,
-    "times_raised": 1,
-    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
-    "patched_attempt": 2,
+    "times_raised": 2,
+    "fixed_by_commit": "1d1b6d2e766dcadaf8e92f385e4406f3c56bf8cb",
+    "patched_attempt": 3,
     "reopen_reason": "deterministic check failed after patch"
   },
   {
@@ -114,9 +114,9 @@
     },
     "status": "open",
     "raised_attempt": 2,
-    "times_raised": 1,
-    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
-    "patched_attempt": 2,
+    "times_raised": 2,
+    "fixed_by_commit": "1d1b6d2e766dcadaf8e92f385e4406f3c56bf8cb",
+    "patched_attempt": 3,
     "reopen_reason": "deterministic check failed after patch"
   },
   {
@@ -132,9 +132,9 @@
     },
     "status": "open",
     "raised_attempt": 2,
-    "times_raised": 1,
-    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
-    "patched_attempt": 2,
+    "times_raised": 2,
+    "fixed_by_commit": "1d1b6d2e766dcadaf8e92f385e4406f3c56bf8cb",
+    "patched_attempt": 3,
     "reopen_reason": "deterministic check failed after patch"
   },
   {
@@ -148,9 +148,9 @@
     },
     "status": "open",
     "raised_attempt": 2,
-    "times_raised": 1,
-    "fixed_by_commit": "c6903cf51b16fa74f064df2c829d42a682f03017",
-    "patched_attempt": 2,
+    "times_raised": 2,
+    "fixed_by_commit": "1d1b6d2e766dcadaf8e92f385e4406f3c56bf8cb",
+    "patched_attempt": 3,
     "reopen_reason": "deterministic check failed after patch"
   }
 ]
