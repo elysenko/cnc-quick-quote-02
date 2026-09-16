@@ -104,5 +104,7 @@
   "schema_version": 1,
   "serve_topology": "nginx_frontend_plus_backend_supervisor",
   "stack_id": "enterprise",
-  "template_dir": "template-enterprise"
+  "template_dir": "template-enterprise",
+  "template_id": "enterprise",
+  "template_version": 2
 }
