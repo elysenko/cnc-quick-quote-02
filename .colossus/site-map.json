@@ -1,0 +1,155 @@
+{
+  "site": {
+    "name": "tu-prep-xdfrnp2o",
+    "site_id": "tu-prep-xdfrnp2o"
+  },
+  "meta": {
+    "generated_by": "declared"
+  },
+  "front_end": {
+    "pages": [
+      {
+        "name": "403",
+        "page_id": "403",
+        "url": "/403",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Account",
+        "page_id": "account",
+        "url": "/account",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Bends",
+        "page_id": "bends",
+        "url": "/bends",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Branding",
+        "page_id": "branding",
+        "url": "/branding",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Return",
+        "page_id": "checkout-quote-d-return",
+        "url": "/checkout/:quoteId/return",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Review",
+        "page_id": "checkout-quote-d-review",
+        "url": "/checkout/:quoteId/review",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Shipping",
+        "page_id": "checkout-quote-d-shipping",
+        "url": "/checkout/:quoteId/shipping",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Contact",
+        "page_id": "contact",
+        "url": "/contact",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Login",
+        "page_id": "login",
+        "url": "/login",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Machine",
+        "page_id": "machine",
+        "url": "/machine",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Material",
+        "page_id": "material",
+        "url": "/material",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Materials",
+        "page_id": "materials",
+        "url": "/materials",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Orders",
+        "page_id": "orders",
+        "url": "/orders",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Confirmation",
+        "page_id": "orders-id-confirmation",
+        "url": "/orders/:id/confirmation",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Payment",
+        "page_id": "payment",
+        "url": "/payment",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Pricing",
+        "page_id": "pricing",
+        "url": "/pricing",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Quotes",
+        "page_id": "quotes",
+        "url": "/quotes",
+        "linked_page_ids": []
+      },
+      {
+        "name": ":id",
+        "page_id": "quotes-id",
+        "url": "/quotes/:id",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Review",
+        "page_id": "review",
+        "url": "/review",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Settings",
+        "page_id": "settings",
+        "url": "/settings",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Shipping",
+        "page_id": "shipping",
+        "url": "/shipping",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Signup",
+        "page_id": "signup",
+        "url": "/signup",
+        "linked_page_ids": []
+      },
+      {
+        "name": "Upload",
+        "page_id": "upload",
+        "url": "/upload",
+        "linked_page_ids": []
+      }
+    ]
+  },
+  "back_end": {
+    "tables": []
+  },
+  "generated_by": "declared"
+}

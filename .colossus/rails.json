@@ -1,0 +1,7 @@
+{
+  "routeStyle": "angular-routes",
+  "routesFile": "frontend/src/app/app.routes.ts",
+  "appDir": "frontend/src/app",
+  "scanDir": "frontend/src",
+  "styleTokenDir": "frontend/src"
+}
